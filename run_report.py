@@ -169,8 +169,13 @@ def main() -> None:
         sys.exit(0)
 
     # --rate и --vat: аргументы или переменные окружения
-    rate = args.rate or (float(os.getenv("REPORT_RATE_USD_KZT", "0")) or None)
-    vat = args.vat or (float(os.getenv("REPORT_VAT_PCT", "0")) or None)
+    rate = args.rate if args.rate is not None else (float(os.getenv("REPORT_RATE_USD_KZT", "0")) or None)
+    if args.vat is not None:
+        vat = args.vat
+    elif os.getenv("REPORT_VAT_PCT") is not None:
+        vat = float(os.getenv("REPORT_VAT_PCT"))
+    else:
+        vat = None
 
     if rate is None or vat is None:
         print("\nОшибка: необходимо указать --rate и --vat (или REPORT_RATE_USD_KZT / REPORT_VAT_PCT)\n")

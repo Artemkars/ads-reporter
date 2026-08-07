@@ -509,8 +509,8 @@
     // Суммируем НДС и АК для скрипта (он считает общий % наценки)
     const totalVat = parseFloat(vat) + parseFloat(ac);
 
-    if (!rate || totalVat === 0) {
-      showStatus('error', '⚠', 'Заполните курс и комиссии');
+    if (!rate) {
+      showStatus('error', '⚠', 'Заполните курс');
       return;
     }
 
