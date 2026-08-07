@@ -77,14 +77,8 @@ class MetaAdsSource(DataSource):
         if not raw_insights:
             return []
 
-        # Сбор уникальных ID для запроса статусов
-        object_ids = set()
-        for insight in raw_insights:
-            if "campaign_id" in insight: object_ids.add(insight["campaign_id"])
-            if "adset_id" in insight: object_ids.add(insight["adset_id"])
-            if "ad_id" in insight: object_ids.add(insight["ad_id"])
-
-        statuses = self._fetch_statuses(list(object_ids))
+        # Запрашиваем статусы всех кампаний, групп и объявлений
+        statuses = self._fetch_all_statuses(act_id)
 
         # Построение дерева
         # tree[campaign_id] = { name, spend, leads, status, adsets: { adset_id: { ... ads: { ad_id: {...} } } } }
@@ -273,30 +267,36 @@ class MetaAdsSource(DataSource):
 
         return all_insights
 
-    def _fetch_statuses(self, object_ids: list[str]) -> dict[str, str]:
-        """Пакетно запрашивает статусы объектов по ID."""
+    def _fetch_all_statuses(self, act_id: str) -> dict[str, str]:
+        """Запрашивает статусы всех объектов кабинета (кампании, группы, объявления)."""
         statuses = {}
-        chunk_size = 50
         
-        for i in range(0, len(object_ids), chunk_size):
-            chunk = object_ids[i:i + chunk_size]
-            url = f"{self.base_url}/{self.api_version}/"
+        for edge in ["campaigns", "adsets", "ads"]:
+            url = f"{self.base_url}/{self.api_version}/{act_id}/{edge}"
             params = {
-                "ids": ",".join(chunk),
-                "fields": "status,effective_status",
+                "fields": "id,status,effective_status",
+                "limit": 500,
                 "access_token": self.access_token,
             }
-            try:
-                data = self._get_with_retry(url, params)
-                for obj_id, obj_data in data.items():
-                    if isinstance(obj_data, dict):
-                        st = obj_data.get("effective_status", obj_data.get("status", obj_data.get("configured_status", "UNKNOWN")))
-                        if st == "UNKNOWN":
-                            logger.debug("Статус не найден в ответе: %s", obj_data)
-                        statuses[obj_id] = st
-            except Exception as e:
-                logger.warning("Ошибка при пакетном запросе статусов: %s", e)
-                
+            while url:
+                try:
+                    data = self._get_with_retry(url, params)
+                    for item in data.get("data", []):
+                        obj_id = item.get("id")
+                        if obj_id:
+                            st = item.get("effective_status", item.get("status", "UNKNOWN"))
+                            statuses[obj_id] = st
+                            
+                    next_url = data.get("paging", {}).get("next")
+                    if next_url:
+                        url = next_url
+                        params = {}
+                    else:
+                        url = None
+                except Exception as e:
+                    logger.warning("Ошибка при пакетном запросе статусов %s: %s", edge, e)
+                    break
+                    
         return statuses
 
     def _get_with_retry(self, url: str, params: dict) -> dict:
