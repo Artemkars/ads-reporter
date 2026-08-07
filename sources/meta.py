@@ -283,17 +283,16 @@ class MetaAdsSource(DataSource):
             url = f"{self.base_url}/{self.api_version}/"
             params = {
                 "ids": ",".join(chunk),
-                "fields": "status",
+                "fields": "status,effective_status",
                 "access_token": self.access_token,
             }
             try:
                 data = self._get_with_retry(url, params)
                 for obj_id, obj_data in data.items():
                     if isinstance(obj_data, dict):
-                        # Для Campaign, AdSet и Ad поле статуса может называться status, 
-                        # иногда эффективный статус, но обычно status есть.
-                        # Также иногда Meta отдает status как configured_status
-                        st = obj_data.get("status", obj_data.get("configured_status", "UNKNOWN"))
+                        st = obj_data.get("effective_status", obj_data.get("status", obj_data.get("configured_status", "UNKNOWN")))
+                        if st == "UNKNOWN":
+                            logger.debug("Статус не найден в ответе: %s", obj_data)
                         statuses[obj_id] = st
             except Exception as e:
                 logger.warning("Ошибка при пакетном запросе статусов: %s", e)

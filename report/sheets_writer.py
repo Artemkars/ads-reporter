@@ -209,9 +209,8 @@ def write_report_block(
 
     # Форматирование блока
     sheet_id = _get_sheet_id(service, spreadsheet_id, sheet_name)
-    data_rows_count = max(1, len(client_report.rows))
     _format_report_block(service, spreadsheet_id, sheet_id,
-                         next_row, data_rows_count)
+                         next_row, client_report)
 
     # Автоширина колонок
     _auto_col_widths(service, spreadsheet_id, sheet_id)
@@ -250,14 +249,8 @@ def _build_report_block(client_report: ClientReport) -> list[list]:
         rows.append(["Нет данных за указанный период", "", "", "", "", ""])
     else:
         for row in client_report.rows:
-            prefix = ""
-            if row.level == "adset":
-                prefix = "  └─ "
-            elif row.level == "ad":
-                prefix = "      └─ "
-                
             rows.append([
-                prefix + row.name,
+                row.name,
                 row.spend_usd,
                 row.spend_kzt,
                 row.leads,
@@ -288,16 +281,15 @@ def _build_report_block(client_report: ClientReport) -> list[list]:
 
 def _format_report_block(
     service, spreadsheet_id: str, sheet_id: int,
-    start_row: int, data_rows_count: int
+    start_row: int, client_report
 ) -> None:
     """Применяет форматирование к блоку отчёта."""
-    # start_row — 1-indexed (номер строки в Sheets)
-    # В API batchUpdate используется 0-indexed
-    r = start_row - 1  # 0-indexed
+    r = start_row - 1
 
     header_row = r          # шапка периода
     cols_row = r + 1        # заголовки колонок
     data_start = r + 2      # первая строка данных
+    data_rows_count = max(1, len(client_report.rows))
     total_row = data_start + data_rows_count  # ИТОГО
 
     requests = [
@@ -333,6 +325,55 @@ def _format_report_block(
         _number_format_request(sheet_id, data_start, total_row + 1, 2, 3, "#,##0 ₸"),
         _number_format_request(sheet_id, data_start, total_row + 1, 4, 5, "#,##0 ₸"),
     ]
+
+    # Форматирование и группировка строк данных
+    if client_report.rows:
+        groups = []
+        current_campaign_start = None
+        current_adset_start = None
+
+        for i, row in enumerate(client_report.rows):
+            row_idx = data_start + i
+            
+            # Цвета
+            if row.level == "campaign":
+                bg = (0.906, 0.941, 0.996) # #E8F0FE
+            elif row.level == "adset":
+                bg = (0.953, 0.949, 0.945) # #F3F2F1
+            else:
+                bg = (1.0, 1.0, 1.0) # #FFFFFF
+            requests.append(_format_row_request(sheet_id, row_idx, row_idx + 1, bg=bg))
+
+            # Логика группировки
+            if row.level == "campaign":
+                if current_adset_start is not None and row_idx > current_adset_start + 1:
+                    groups.append((current_adset_start + 1, row_idx))
+                if current_campaign_start is not None and row_idx > current_campaign_start + 1:
+                    groups.append((current_campaign_start + 1, row_idx))
+                current_adset_start = None
+                current_campaign_start = row_idx
+            elif row.level == "adset":
+                if current_adset_start is not None and row_idx > current_adset_start + 1:
+                    groups.append((current_adset_start + 1, row_idx))
+                current_adset_start = row_idx
+
+        last_idx = data_start + len(client_report.rows)
+        if current_adset_start is not None and last_idx > current_adset_start + 1:
+            groups.append((current_adset_start + 1, last_idx))
+        if current_campaign_start is not None and last_idx > current_campaign_start + 1:
+            groups.append((current_campaign_start + 1, last_idx))
+
+        for start_idx, end_idx in groups:
+            requests.append({
+                "addDimensionGroup": {
+                    "range": {
+                        "sheetId": sheet_id,
+                        "dimension": "ROWS",
+                        "startIndex": start_idx,
+                        "endIndex": end_idx
+                    }
+                }
+            })
 
     # Добавляем условное форматирование статусов
     requests.extend(_conditional_format_status(sheet_id, data_start, total_row))

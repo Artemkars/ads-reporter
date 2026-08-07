@@ -186,17 +186,20 @@ def _write_campaign_row(
 ) -> int:
     """Пишет одну строку кампании."""
     thin = Side(style="thin", color=COLOR_BORDER)
-    border = Border(left=thin, right=thin, top=thin, bottom=thin)
-    bg_color = COLOR_ODD_ROW if is_even else "FFFFFF"
-
-    prefix = ""
-    if row_data.level == "adset":
-        prefix = "  └─ "
+    if row_data.level == "campaign":
+        ws.row_dimensions[row].outlineLevel = 0
+        bg_color = "E8F0FE" # Light blue
+    elif row_data.level == "adset":
+        ws.row_dimensions[row].outlineLevel = 1
+        bg_color = "F3F2F1" # Light gray
     elif row_data.level == "ad":
-        prefix = "      └─ "
+        ws.row_dimensions[row].outlineLevel = 2
+        bg_color = "FFFFFF" # White
+    else:
+        bg_color = COLOR_ODD_ROW if is_even else "FFFFFF"
 
     values = [
-        prefix + row_data.name,
+        row_data.name,
         row_data.status,
         row_data.spend_usd,
         row_data.spend_kzt,
