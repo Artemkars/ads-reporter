@@ -321,9 +321,6 @@ def main() -> None:
                         service=sheets_service,
                         spreadsheet_id=sheets_id,
                         client_report=client_report,
-                        client_name=client_name,
-                        date_from=d_from_label,
-                        date_to=d_to_label,
                     )
                     log.info("[%s] Успешно загружено в Google Sheets", client_name)
                 except Exception as e:
