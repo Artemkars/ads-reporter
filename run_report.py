@@ -262,7 +262,7 @@ def main() -> None:
     for client_key, client_cfg in clients_to_process.items():
         client_name = client_cfg.get("name", client_key.upper())
         act_id_env = client_cfg.get("act_id_env", "")
-        act_id = os.getenv(act_id_env)
+        act_id = client_cfg.get("act_id") or (os.getenv(act_id_env) if act_id_env else None)
         lead_action_types = client_cfg.get("lead_action_types", ["lead"])
 
         if not act_id:
