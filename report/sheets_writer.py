@@ -271,8 +271,88 @@ def _build_report_block(client_report: ClientReport) -> list[list]:
 
     rows.append([""])
     rows.append([""])
+    rows.append([""])
 
     return rows
+
+
+def write_grand_summary_block(
+    service,
+    spreadsheet_id: str,
+    reports: list[ClientReport]
+) -> None:
+    """Записывает общую сводную таблицу (Grand Summary) в конец листа."""
+    if not reports:
+        return
+        
+    sheet_name = f"{reports[0].client_name} {reports[0].date_label}"
+    sheet_id = _get_sheet_id(service, spreadsheet_id, sheet_name)
+    next_row = _get_next_empty_row(service, spreadsheet_id, sheet_name)
+    
+    total_spend_kzt = 0.0
+    total_spend_usd = 0.0
+    total_leads = 0
+    
+    for report in reports:
+        total_spend_usd += report.total.spend_usd
+        total_spend_kzt += report.total.spend_kzt
+        
+        # Считаем лиды ТОЛЬКО из кампаний, нацеленных на лиды (на уровне кампании)
+        if report.original_campaigns:
+            for camp in report.original_campaigns:
+                if camp.level == 'campaign' and camp.is_lead_campaign:
+                    total_leads += camp.results
+                    
+    avg_cost = round(total_spend_kzt / total_leads, 2) if total_leads > 0 else 0.0
+    
+    rows = [
+        ["ОБЩАЯ СВОДКА (Meta + Google)"],
+        ["Общий расход $", "Общий расход ₸", "Всего лидов", "Ср. цена лида"],
+        [round(total_spend_usd, 2), round(total_spend_kzt, 2), total_leads, avg_cost],
+    ]
+    
+    start_cell = f"'{sheet_name}'!A{next_row}"
+    service.spreadsheets().values().update(
+        spreadsheetId=spreadsheet_id,
+        range=start_cell,
+        valueInputOption="USER_ENTERED",
+        body={"values": rows},
+    ).execute()
+    
+    r = next_row - 1
+    requests = [
+        _format_row_request(sheet_id, r, r + 1, bold=True, bg=(0.12, 0.22, 0.39), fg=(1, 1, 1), font_size=12),
+        _format_row_request(sheet_id, r + 1, r + 2, bold=True, bg=(0.82, 0.88, 0.95), fg=(0.12, 0.22, 0.39)),
+        _format_row_request(sheet_id, r + 2, r + 3, bold=True, bg=(1, 1, 1), fg=(0, 0, 0)),
+        {
+            "updateBorders": {
+                "range": {
+                    "sheetId": sheet_id,
+                    "startRowIndex": r,
+                    "endRowIndex": r + 3,
+                    "startColumnIndex": 0,
+                    "endColumnIndex": 4,
+                },
+                "top": _border_style(),
+                "bottom": _border_style(),
+                "left": _border_style(),
+                "right": _border_style(),
+                "innerHorizontal": _border_style(style="DOTTED"),
+                "innerVertical": _border_style(style="DOTTED"),
+            }
+        },
+        _number_format_request(sheet_id, r + 2, r + 3, 0, 1, "#,##0.00"),
+        _number_format_request(sheet_id, r + 2, r + 3, 1, 2, "#,##0 ₸"),
+        _number_format_request(sheet_id, r + 2, r + 3, 3, 4, "#,##0 ₸"),
+    ]
+    
+    try:
+        service.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body={"requests": requests},
+        ).execute()
+    except Exception as fmt_err:
+        logger.warning("Ошибка форматирования сводки: %s", fmt_err)
 
 
 # ===========================================================================
@@ -415,6 +495,25 @@ def _sheet_exists(service, spreadsheet_id: str, sheet_name: str) -> bool:
     return sheet_name in [s["properties"]["title"] for s in meta.get("sheets", [])]
 
 
+def delete_sheet_if_exists(service, spreadsheet_id: str, sheet_name: str) -> None:
+    """Удаляет лист, если он существует."""
+    try:
+        sheet_id = _get_sheet_id(service, spreadsheet_id, sheet_name)
+        body = {
+            "requests": [{
+                "deleteSheet": {
+                    "sheetId": sheet_id
+                }
+            }]
+        }
+        service.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheet_id, body=body
+        ).execute()
+        logger.info("Удален старый лист '%s'", sheet_name)
+    except ValueError:
+        pass # Лист не существует
+
+
 def _create_sheet(service, spreadsheet_id: str, sheet_name: str,
                   frozen_rows: int = 0) -> None:
     body = {
@@ -549,7 +648,9 @@ def _conditional_format_status(sheet_id: int, start_row: int, end_row: int) -> l
             }
         }
     return [
-        rule("TEXT_EQ", ["Активна"], (0.85, 0.93, 0.83), (0.1, 0.5, 0.1)),
-        rule("TEXT_EQ", ["Остановлена"], (0.9, 0.9, 0.9), (0.4, 0.4, 0.4)),
-        rule("TEXT_EQ", ["Отключена"], (0.9, 0.9, 0.9), (0.4, 0.4, 0.4)),
+        rule("TEXT_CONTAINS", ["Активна"], (0.85, 0.93, 0.83), (0.1, 0.5, 0.1)),
+        rule("TEXT_CONTAINS", ["Остановлена"], (0.9, 0.9, 0.9), (0.4, 0.4, 0.4)),
+        rule("TEXT_CONTAINS", ["Отключена"], (0.9, 0.9, 0.9), (0.4, 0.4, 0.4)),
+        rule("TEXT_CONTAINS", ["Удалена"], (0.9, 0.9, 0.9), (0.4, 0.4, 0.4)),
+        rule("TEXT_CONTAINS", ["Отклонена"], (0.98, 0.9, 0.9), (0.7, 0.1, 0.1)),
     ]

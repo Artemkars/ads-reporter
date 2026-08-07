@@ -364,12 +364,27 @@ def main() -> None:
             if sheets_id and google_creds:
                 try:
                     sheets_service = build_service(google_creds)
+                    
+                    # Удаляем старый лист если он существует (чтобы избежать дубликатов)
+                    sheet_name = f"{reports_to_write[0].client_name} {reports_to_write[0].date_label}"
+                    from report.sheets_writer import delete_sheet_if_exists, write_grand_summary_block
+                    delete_sheet_if_exists(sheets_service, sheets_id, sheet_name)
+                    
                     for report in reports_to_write:
                         write_report_block(
                             service=sheets_service,
                             spreadsheet_id=sheets_id,
                             client_report=report,
                         )
+                        
+                    # Общая сводка (Meta + Google)
+                    if len(reports_to_write) > 1:
+                        write_grand_summary_block(
+                            service=sheets_service,
+                            spreadsheet_id=sheets_id,
+                            reports=reports_to_write,
+                        )
+                        
                     log.info("[%s] Успешно загружено в Google Sheets", client_name)
                 except Exception as e:
                     log.error("[%s] Ошибка записи в Google Sheets: %s", client_name, e)

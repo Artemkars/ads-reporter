@@ -137,6 +137,7 @@ class GoogleAdsSource(DataSource):
                     c_node["name"] = camp.name
                     c_node["status"] = camp.status.name
                     c_node["bidding"] = bidding # Save to pass down
+                    c_node["is_lead_campaign"] = bidding in ("TARGET_CPA", "TARGET_ROAS", "MAXIMIZE_CONVERSIONS", "MAXIMIZE_CONVERSION_VALUE", "PERFORMANCE_MAX")
                     c_node["spend"] += spend
                     c_node["results"] += results
 
@@ -190,7 +191,8 @@ class GoogleAdsSource(DataSource):
                     date_from=d_from,
                     date_to=d_to,
                     client_id=client_id,
-                    source="google"
+                    source="google",
+                    is_lead_campaign=c_data.get("is_lead_campaign", False)
                 ))
                 for a_id, a_data in c_data["adsets"].items():
                     result_rows.append(CampaignRow(
@@ -202,7 +204,8 @@ class GoogleAdsSource(DataSource):
                         date_from=d_from,
                         date_to=d_to,
                         client_id=client_id,
-                        source="google"
+                        source="google",
+                        is_lead_campaign=c_data.get("is_lead_campaign", False)
                     ))
                     for ad_id, ad_data in a_data["ads"].items():
                         result_rows.append(CampaignRow(
@@ -214,7 +217,8 @@ class GoogleAdsSource(DataSource):
                             date_from=d_from,
                             date_to=d_to,
                             client_id=client_id,
-                            source="google"
+                            source="google",
+                            is_lead_campaign=c_data.get("is_lead_campaign", False)
                         ))
             return result_rows
 

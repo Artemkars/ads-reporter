@@ -98,6 +98,58 @@ def write_excel_report(
         
         current_row += 3 # Spacing between blocks
 
+    # --- Общая сводка (Grand Summary) ---
+    if len(reports) > 1:
+        total_spend_usd = sum(r.total.spend_usd for r in reports)
+        total_spend_kzt = sum(r.total.spend_kzt for r in reports)
+        total_leads = 0
+        
+        for r in reports:
+            if r.original_campaigns:
+                for camp in r.original_campaigns:
+                    if camp.level == 'campaign' and camp.is_lead_campaign:
+                        total_leads += camp.results
+                        
+        avg_cost = round(total_spend_kzt / total_leads, 2) if total_leads > 0 else 0.0
+        
+        # Заголовок сводки
+        title_cell = ws.cell(row=current_row, column=1)
+        title_cell.value = "ОБЩАЯ СВОДКА (Meta + Google)"
+        title_cell.font = Font(name="Calibri", size=12, bold=True, color=COLOR_TITLE_FG)
+        title_cell.alignment = Alignment(horizontal="left", vertical="center")
+        _merge(ws, current_row, 1, current_row, len(COLUMNS))
+        current_row += 1
+        
+        # Шапка сводки
+        headers = ["Общий расход $", "Общий расход ₸", "Всего лидов", "Ср. цена лида"]
+        thin = Side(style="thin", color=COLOR_BORDER)
+        border = Border(left=thin, right=thin, top=thin, bottom=thin)
+        for i, h in enumerate(headers, start=1):
+            cell = ws.cell(row=current_row, column=i)
+            cell.value = h
+            cell.font = Font(name="Calibri", size=10, bold=True, color=COLOR_HEADER_FG)
+            cell.fill = PatternFill("solid", fgColor=COLOR_HEADER_BG)
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = border
+        current_row += 1
+        
+        # Значения сводки
+        values = [
+            (round(total_spend_usd, 2), "#,##0.00"), 
+            (round(total_spend_kzt, 2), "#,##0 ₸"), 
+            (total_leads, "0"), 
+            (avg_cost, "#,##0 ₸")
+        ]
+        for i, (v, num_fmt) in enumerate(values, start=1):
+            cell = ws.cell(row=current_row, column=i)
+            cell.value = v
+            cell.number_format = num_fmt
+            cell.font = Font(name="Calibri", size=10, bold=True)
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = border
+        
+        current_row += 2
+
     # --- Ширина колонок -----------------------------------------------------
     for col_idx, (_, width, _) in enumerate(COLUMNS, start=1):
         ws.column_dimensions[get_column_letter(col_idx)].width = width
@@ -107,11 +159,10 @@ def write_excel_report(
 
     wb.save(filepath)
     logger.info(
-        "[%s] Excel-отчёт сохранён: %s (%d кампаний)",
-        client_report.client_name,
-        filepath,
-        len(client_report.rows),
+        "[%s] Excel-отчёт сохранён: %s (%d источников)",
+        client_name.upper(), filepath, len(reports)
     )
+
     return filepath
 
 

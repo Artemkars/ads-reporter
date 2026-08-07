@@ -27,6 +27,7 @@ class ReportRow:
     cost_per_result: float   # spend_kzt / results (0 если results == 0)
     level: str = "campaign"  # 'campaign', 'adset', 'ad'
     is_total: bool = False   # True для итоговой строки блока
+    is_lead_campaign: bool = False
 
 
 @dataclass
@@ -40,6 +41,7 @@ class ClientReport:
     vat_pct: float
     date_label: str               # "01.07.2026 – 07.07.2026" — для заголовка отчёта
     source_name: str = "Meta Ads" # "Meta Ads" or "Google Ads"
+    original_campaigns: list[CampaignRow] = None # Для общей сводки
 
 
 def calculate_report(
@@ -82,6 +84,7 @@ def calculate_report(
             results=camp.results,
             cost_per_result=cost_per_result,
             level=camp.level,
+            is_lead_campaign=camp.is_lead_campaign
         ))
 
     # Итоговая строка (считаем только по уровню campaign, чтобы не дублировать)
@@ -116,6 +119,7 @@ def calculate_report(
         vat_pct=vat_pct,
         date_label=date_label,
         source_name=source_name,
+        original_campaigns=campaigns
     )
 
 
@@ -134,5 +138,8 @@ def _format_status(status: str) -> str:
         "WITH_ISSUES": "С ошибками",
         "IN_PROCESS": "В обработке",
         "PREAPPROVED": "Одобрена",
+        # Google Ads statuses
+        "ENABLED": "Активна",
+        "REMOVED": "Удалена",
     }
     return mapping.get(status.upper(), status)

@@ -143,6 +143,7 @@ class MetaAdsSource(DataSource):
             camp_node = tree[c_id]
             camp_node["name"] = insight.get("campaign_name", "Без названия")
             camp_node["status"] = statuses.get(c_id, "UNKNOWN")
+            camp_node["is_lead_campaign"] = objective in ("OUTCOME_LEADS", "LEAD_GENERATION", "CONVERSIONS", "OUTCOME_SALES", "MESSAGES", "MESSAGING")
             
             # Обновляем Группу
             adset_node = camp_node["adsets"][a_id]
@@ -165,7 +166,7 @@ class MetaAdsSource(DataSource):
             
         if min_date > max_date:
             min_date = date_from or (date.today() - timedelta(days=7))
-            max_date = date_to or date.today()
+            max_date = max_date or date.today()
 
         # Разворачиваем в плоский список
         rows = []
@@ -179,6 +180,7 @@ class MetaAdsSource(DataSource):
                 date_from=min_date,
                 date_to=max_date,
                 client_id=client_id,
+                is_lead_campaign=c_data.get("is_lead_campaign", False)
             ))
             
             for a_id, a_data in c_data["adsets"].items():
@@ -191,6 +193,7 @@ class MetaAdsSource(DataSource):
                     date_from=min_date,
                     date_to=max_date,
                     client_id=client_id,
+                    is_lead_campaign=c_data.get("is_lead_campaign", False)
                 ))
                 
                 for ad_id, ad_data in a_data["ads"].items():
@@ -203,6 +206,7 @@ class MetaAdsSource(DataSource):
                         date_from=min_date,
                         date_to=max_date,
                         client_id=client_id,
+                        is_lead_campaign=c_data.get("is_lead_campaign", False)
                     ))
 
         logger.info(

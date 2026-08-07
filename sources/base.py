@@ -26,6 +26,7 @@ class CampaignRow:
     client_id: str                  # ключ клиента из config.yaml (например, "amk")
     source: str = "meta"            # метка источника для логов и будущих расширений
     level: str = "campaign"         # уровень: 'campaign', 'adset', 'ad'
+    is_lead_campaign: bool = False  # Флаг для общей таблицы (учитываем лиды только отсюда)
     raw_actions: dict = field(default_factory=dict)  # все action_type → value (для отладки)
 
 
