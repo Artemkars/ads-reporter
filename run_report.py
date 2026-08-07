@@ -286,17 +286,22 @@ def main() -> None:
             )
 
             if not campaigns:
-                log.warning("[%s] Нет данных за период %s - %s", client_name, date_from_dt.strftime('%Y-%m-%d'), date_to_dt.strftime('%Y-%m-%d'))
+                d_from_str = date_from.strftime('%Y-%m-%d') if date_from else "last_7d"
+                d_to_str = date_to.strftime('%Y-%m-%d') if date_to else "last_7d"
+                log.warning("[%s] Нет данных за период %s - %s", client_name, d_from_str, d_to_str)
 
             # 2. Расчет показателей
+            d_from_label = date_from.strftime('%d.%m.%Y') if date_from else ""
+            d_to_label = date_to.strftime('%d.%m.%Y') if date_to else ""
+
             client_report = calculate_report(
                 client_id=client_key,
                 client_name=client_name,
                 campaigns=campaigns,
                 rate_usd_kzt=rate,
                 vat_pct=vat,
-                date_from=date_from_dt.strftime('%d.%m.%Y'),
-                date_to=date_to_dt.strftime('%d.%m.%Y'),
+                date_from=d_from_label,
+                date_to=d_to_label,
             )
 
 
@@ -312,12 +317,15 @@ def main() -> None:
             if sheets_id and google_creds:
                 try:
                     sheets_service = build_service(google_creds)
-                    sheets_url = write_report_block(
+                    write_report_block(
                         service=sheets_service,
                         spreadsheet_id=sheets_id,
                         client_report=client_report,
+                        client_name=client_name,
+                        date_from=d_from_label,
+                        date_to=d_to_label,
                     )
-                    log.info("[%s] Успешно загружено в Google Sheets: %s", client_name, sheets_url)
+                    log.info("[%s] Успешно загружено в Google Sheets", client_name)
                 except Exception as e:
                     log.error("[%s] Ошибка записи в Google Sheets: %s", client_name, e)
 
