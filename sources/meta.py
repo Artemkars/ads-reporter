@@ -61,7 +61,15 @@ class MetaAdsSource(DataSource):
         )
 
         try:
-            raw_insights = self._fetch_ad_insights(act_id, date_from, date_to)
+            active_camp_ids = self._get_active_campaign_ids(act_id, date_from, date_to)
+            if not active_camp_ids:
+                logger.info("[%s] Нет активных кампаний с расходами/лидами за этот период.", client_id.upper())
+                return []
+                
+            raw_insights = []
+            for camp_id in active_camp_ids:
+                insights = self._fetch_ad_insights(camp_id, date_from, date_to)
+                raw_insights.extend(insights)
         except Exception as exc:
             logger.error("[%s] Критическая ошибка API Meta: %s", client_id.upper(), exc)
             return []
@@ -199,10 +207,40 @@ class MetaAdsSource(DataSource):
         return rows
 
 
+    def _get_active_campaign_ids(self, act_id: str, date_from: Optional[date], date_to: Optional[date]) -> list[str]:
+        """Получает список ID кампаний, у которых были показы/расходы в данный период."""
+        params = {
+            "level": "campaign",
+            "fields": "campaign_id",
+            "limit": 500,
+            "access_token": self.access_token,
+        }
+        if date_from and date_to:
+            params["time_range"] = f'{{"since":"{date_from.isoformat()}","until":"{date_to.isoformat()}"}}'
+        else:
+            params["date_preset"] = "last_7d"
+            
+        url = f"{self.base_url}/{self.api_version}/{act_id}/insights"
+        camp_ids = []
+        while url:
+            data = self._get_with_retry(url, params)
+            for item in data.get("data", []):
+                if item.get("campaign_id"):
+                    camp_ids.append(item["campaign_id"])
+                    
+            next_url = data.get("paging", {}).get("next")
+            if next_url:
+                url = next_url
+                params = {}
+            else:
+                url = None
+                
+        return list(set(camp_ids))
+
     def _fetch_ad_insights(
-        self, act_id: str, date_from: Optional[date], date_to: Optional[date]
+        self, node_id: str, date_from: Optional[date], date_to: Optional[date]
     ) -> list[dict]:
-        """Забирает инсайты на уровне объявлений с пагинацией."""
+        """Забирает инсайты на уровне объявлений с пагинацией для конкретного узла."""
         params = {
             "level": "ad",
             "fields": INSIGHTS_FIELDS,
@@ -215,7 +253,7 @@ class MetaAdsSource(DataSource):
         else:
             params["date_preset"] = "last_7d"
 
-        url = f"{self.base_url}/{self.api_version}/{act_id}/insights"
+        url = f"{self.base_url}/{self.api_version}/{node_id}/insights"
         all_insights = []
         page = 1
 
