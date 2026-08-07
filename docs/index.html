@@ -189,9 +189,11 @@
       font-size: 14px;
       color: var(--text-primary) !important;
     }
-    .choices__list--dropdown .choices__item--selectable.is-highlighted, .choices[data-type*="select-one"] .choices__list--dropdown .choices__item--selectable.is-highlighted {
-      background: var(--bg-hover) !important;
-      color: var(--text-primary) !important;
+    .choices__list--dropdown .choices__item--selectable.is-highlighted, 
+    .choices[data-type*="select-one"] .choices__list--dropdown .choices__item--selectable.is-highlighted,
+    .choices__list--dropdown .choices__item--selectable:hover {
+      background-color: var(--accent) !important;
+      color: #ffffff !important;
     }
     .choices__input {
       background: var(--bg-hover) !important;
