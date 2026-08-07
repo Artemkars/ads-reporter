@@ -101,6 +101,9 @@
     }
 
     /* Main */
+    body {
+      zoom: 1.15; /* Увеличиваем весь интерфейс на 15% */
+    }
     .main {
       width: 100%;
       max-width: 560px;
@@ -175,20 +178,20 @@
       background: var(--bg-input);
       box-shadow: 0 0 0 4px var(--accent-glow);
     }
-    .choices__list--dropdown {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text-primary);
-      box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+    .choices__list--dropdown, .choices[data-type*="select-one"] .choices__list--dropdown {
+      background: var(--bg-card) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: var(--radius-sm) !important;
+      color: var(--text-primary) !important;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.5) !important;
     }
-    .choices__list--dropdown .choices__item {
+    .choices__list--dropdown .choices__item, .choices[data-type*="select-one"] .choices__list--dropdown .choices__item {
       font-size: 14px;
-      color: var(--text-primary);
+      color: var(--text-primary) !important;
     }
-    .choices__list--dropdown .choices__item--selectable.is-highlighted {
-      background: var(--bg-hover);
-      color: var(--text-primary);
+    .choices__list--dropdown .choices__item--selectable.is-highlighted, .choices[data-type*="select-one"] .choices__list--dropdown .choices__item--selectable.is-highlighted {
+      background: var(--bg-hover) !important;
+      color: var(--text-primary) !important;
     }
     .choices__input {
       background: var(--bg-hover) !important;
@@ -458,9 +461,9 @@
             <option value="amkz_lexus_aktau">AMKZ_Lexus_Aktau</option>
             <option value="amkz_geely_kostanay">AMKZ_Geely_Kostanay</option>
             <option value="amkz_geely_karaganda">AMKZ_Geely_Karaganda</option>
-            <option value="unknown_120996931604569">Unknown_120996931604569</option>
-            <option value="unknown_4864027116949045">Unknown_4864027116949045</option>
-            <option value="unknown_1265947288969279">Unknown_1265947288969279</option>
+            <option value="unknown_120996931604569">Антонович Дизайн Контекст</option>
+            <option value="unknown_4864027116949045">Казахстан Автотрейд</option>
+            <option value="unknown_1265947288969279">AMKZ_ВШОЗ</option>
           </select>
       </div>
     </div>

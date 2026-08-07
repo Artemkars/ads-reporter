@@ -196,21 +196,21 @@ clients:
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
   unknown_120996931604569:
-    name: Unknown_120996931604569
+    name: Антонович Дизайн Контекст
     act_id: act_120996931604569
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
   unknown_4864027116949045:
-    name: Unknown_4864027116949045
+    name: Казахстан Автотрейд
     act_id: act_4864027116949045
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
   unknown_1265947288969279:
-    name: Unknown_1265947288969279
+    name: AMKZ_ВШОЗ
     act_id: act_1265947288969279
     lead_action_types:
     - lead
