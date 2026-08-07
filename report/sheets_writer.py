@@ -238,7 +238,7 @@ def _build_report_block(client_report: ClientReport) -> list[list]:
         f"Курс: {client_report.rate_usd_kzt:,.0f} ₸",
         f"НДС + АК: {client_report.vat_pct}%",
         "",
-        f"Источник: Meta Ads",
+        f"Источник: {client_report.source_name}",
     ])
 
     # Строка 2: заголовки таблицы
@@ -269,7 +269,7 @@ def _build_report_block(client_report: ClientReport) -> list[list]:
         "",
     ])
 
-    # Пустая строка-разделитель
+    rows.append([""])
     rows.append([""])
 
     return rows

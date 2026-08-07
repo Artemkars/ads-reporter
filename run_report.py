@@ -50,6 +50,7 @@ from report.calculator import calculate_report
 from report.excel_writer import write_excel_report
 from report.sheets_writer import build_service, write_report_block
 from sources.meta import MetaAdsSource
+from sources.google import GoogleAdsSource
 
 
 # ---------------------------------------------------------------------------
@@ -230,6 +231,25 @@ def main() -> None:
         retry_delay=meta_cfg.get("retry_delay_seconds", 5),
         campaigns_per_page=meta_cfg.get("campaigns_per_page", 100),
     )
+    
+    # Инициализируем источник данных Google Ads
+    google_dev_token = os.getenv("GOOGLE_DEVELOPER_TOKEN")
+    google_client_id = os.getenv("GOOGLE_CLIENT_ID")
+    google_client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    google_refresh_token = os.getenv("GOOGLE_REFRESH_TOKEN")
+    google_login_customer_id = os.getenv("GOOGLE_LOGIN_CUSTOMER_ID")
+    
+    google_source = None
+    if all([google_dev_token, google_client_id, google_client_secret, google_refresh_token, google_login_customer_id]):
+        google_source = GoogleAdsSource(
+            developer_token=google_dev_token,
+            client_id=google_client_id,
+            client_secret=google_client_secret,
+            refresh_token=google_refresh_token,
+            login_customer_id=google_login_customer_id
+        )
+    else:
+        log.info("Google Ads credentials incomplete, Google Ads will be skipped.")
 
     # Выбираем клиентов для обработки
     if args.client:
@@ -285,16 +305,17 @@ def main() -> None:
                 date_to=date_to,
             )
 
+            d_from_str = date_from.strftime('%Y-%m-%d') if date_from else "last_7d"
+            d_to_str = date_to.strftime('%Y-%m-%d') if date_to else "last_7d"
+
             if not campaigns:
-                d_from_str = date_from.strftime('%Y-%m-%d') if date_from else "last_7d"
-                d_to_str = date_to.strftime('%Y-%m-%d') if date_to else "last_7d"
-                log.warning("[%s] Нет данных за период %s - %s", client_name, d_from_str, d_to_str)
+                log.warning("[%s] Нет данных Meta за период %s - %s", client_name, d_from_str, d_to_str)
 
             # 2. Расчет показателей
             d_from_label = date_from.strftime('%d.%m.%Y') if date_from else ""
             d_to_label = date_to.strftime('%d.%m.%Y') if date_to else ""
 
-            client_report = calculate_report(
+            meta_report = calculate_report(
                 client_id=client_key,
                 client_name=client_name,
                 campaigns=campaigns,
@@ -302,13 +323,39 @@ def main() -> None:
                 vat_pct=vat,
                 date_from=d_from_label,
                 date_to=d_to_label,
+                source_name="Meta Ads",
             )
-
-
+            reports_to_write = [meta_report]
+            
+            # 2.5. Сбор данных из Google Ads (если настроено)
+            google_customer_id = client_cfg.get("google_customer_id")
+            if google_source and google_customer_id:
+                log.info("[%s] ─── Сбор данных Google Ads ─────────────────", client_name)
+                google_campaigns = google_source.fetch(
+                    client_id=client_key,
+                    act_id=google_customer_id,
+                    lead_action_types=[], # Not needed for Google
+                    date_from=date_from,
+                    date_to=date_to,
+                )
+                if google_campaigns:
+                    google_report = calculate_report(
+                        client_id=client_key,
+                        client_name=client_name,
+                        campaigns=google_campaigns,
+                        rate_usd_kzt=rate,
+                        vat_pct=vat,
+                        date_from=d_from_label,
+                        date_to=d_to_label,
+                        source_name="Google Ads",
+                    )
+                    reports_to_write.append(google_report)
+                else:
+                    log.warning("[%s] Нет данных Google Ads за период", client_name)
 
             # 3a. Excel (если не отключен флагом --no-excel)
             if not args.no_excel:
-                filepath = write_excel_report(client_report, output_dir=args.output_dir)
+                filepath = write_excel_report(reports_to_write, output_dir=args.output_dir)
                 results["success"].append((client_name, filepath))
             else:
                 results["success"].append((client_name, "(Excel пропущен)"))
@@ -317,11 +364,12 @@ def main() -> None:
             if sheets_id and google_creds:
                 try:
                     sheets_service = build_service(google_creds)
-                    write_report_block(
-                        service=sheets_service,
-                        spreadsheet_id=sheets_id,
-                        client_report=client_report,
-                    )
+                    for report in reports_to_write:
+                        write_report_block(
+                            service=sheets_service,
+                            spreadsheet_id=sheets_id,
+                            client_report=report,
+                        )
                     log.info("[%s] Успешно загружено в Google Sheets", client_name)
                 except Exception as e:
                     log.error("[%s] Ошибка записи в Google Sheets: %s", client_name, e)

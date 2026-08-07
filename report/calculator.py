@@ -39,6 +39,7 @@ class ClientReport:
     rate_usd_kzt: float
     vat_pct: float
     date_label: str               # "01.07.2026 – 07.07.2026" — для заголовка отчёта
+    source_name: str = "Meta Ads" # "Meta Ads" or "Google Ads"
 
 
 def calculate_report(
@@ -49,6 +50,7 @@ def calculate_report(
     vat_pct: float,
     date_from: str = None,
     date_to: str = None,
+    source_name: str = "Meta Ads",
 ) -> ClientReport:
     """
     Рассчитывает финансовые показатели по всем кампаниям клиента.
@@ -113,6 +115,7 @@ def calculate_report(
         rate_usd_kzt=rate_usd_kzt,
         vat_pct=vat_pct,
         date_label=date_label,
+        source_name=source_name,
     )
 
 

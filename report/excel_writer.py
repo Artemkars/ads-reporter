@@ -59,50 +59,44 @@ COLUMNS = [
 
 
 def write_excel_report(
-    client_report: ClientReport,
-    output_dir: str = "output",
+    reports: list[ClientReport], output_dir: str = "output"
 ) -> str:
-    """
-    Формирует .xlsx файл для одного клиента.
+    """Генерирует Excel-отчет с группировкой (outlineLevel) и цветовой заливкой."""
+    if not reports:
+        return ""
+        
+    client_name = reports[0].client_name
+    date_label = reports[0].date_label.replace(" ", "").replace("-", "_")
 
-    Args:
-        client_report: рассчитанный отчёт (ClientReport)
-        output_dir: директория для сохранения (создаётся если не существует)
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    filepath = str(out_dir / f"Отчет_{client_name}_{date_label}.xlsx")
 
-    Returns:
-        Абсолютный путь к созданному файлу.
-    """
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-
-    # Имя файла: AMK_report_2026-W32.xlsx
-    week_label = datetime.now().strftime("%Y-W%V")
-    filename = f"{client_report.client_name}_report_{week_label}.xlsx"
-    filepath = os.path.join(output_dir, filename)
-
-    wb = openpyxl.Workbook()
+    wb = Workbook()
     ws = wb.active
-    ws.title = "Отчёт"
+    ws.title = f"Отчет {client_name}"
 
     current_row = 1
+    data_start_row = 1
 
-    # --- Заголовок ----------------------------------------------------------
-    current_row = _write_header(ws, client_report, current_row)
-
-    # --- Шапка таблицы ------------------------------------------------------
-    current_row = _write_table_header(ws, current_row)
-
-    # --- Строки кампаний ----------------------------------------------------
-    data_start_row = current_row
-    for i, row in enumerate(client_report.rows):
-        current_row = _write_campaign_row(ws, row, current_row, is_even=(i % 2 == 1))
-
-    # --- Итоговая строка ----------------------------------------------------
-    _write_total_row(ws, client_report.total, current_row)
-    current_row += 1
-
-    # --- Нижний колонтитул --------------------------------------------------
-    current_row += 1
-    _write_footer(ws, client_report, current_row, data_start_row)
+    for client_report in reports:
+        current_row = _write_header(ws, client_report, current_row)
+        current_row = _write_table_header(ws, current_row)
+    
+        block_data_start = current_row
+        if current_row == data_start_row or data_start_row == 1:
+            data_start_row = block_data_start
+            
+        for i, row in enumerate(client_report.rows):
+            current_row = _write_campaign_row(ws, row, current_row, is_even=(i % 2 == 1))
+    
+        _write_total_row(ws, client_report.total, current_row)
+        current_row += 1
+    
+        current_row += 1
+        _write_footer(ws, client_report, current_row, block_data_start)
+        
+        current_row += 3 # Spacing between blocks
 
     # --- Ширина колонок -----------------------------------------------------
     for col_idx, (_, width, _) in enumerate(COLUMNS, start=1):
