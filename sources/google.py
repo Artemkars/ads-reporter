@@ -61,14 +61,26 @@ class GoogleAdsSource(DataSource):
         d_to = date_to or (date.today() - timedelta(days=1))
         date_query = f"segments.date >= '{d_from.isoformat()}' AND segments.date <= '{d_to.isoformat()}'"
 
-        # Мы делаем один большой запрос по ad_group_ad, фильтруя по показам > 0 (или расходам)
-        # Это даст нам сразу всю иерархию для активных объектов
-        query = f"""
+        # 1. Сначала получаем все активные кампании (чтобы поймать PMax и другие без ad_group_ad)
+        query_campaign = f"""
             SELECT
               campaign.id,
               campaign.name,
               campaign.status,
               campaign.bidding_strategy_type,
+              metrics.cost_micros,
+              metrics.conversions,
+              metrics.clicks,
+              metrics.impressions
+            FROM campaign
+            WHERE {date_query}
+              AND metrics.impressions > 0
+        """
+
+        # 2. Получаем детальную разбивку по группам и объявлениям
+        query_ads = f"""
+            SELECT
+              campaign.id,
               ad_group.id,
               ad_group.name,
               ad_group.status,
@@ -85,13 +97,6 @@ class GoogleAdsSource(DataSource):
         """
 
         try:
-            # stream
-            request = self.client.get_type("SearchGoogleAdsStreamRequest")
-            request.customer_id = customer_id
-            request.query = query
-            stream = self.ga_service.search_stream(request)
-            
-            # Построение дерева
             def new_ad_node():
                 return {"name": "", "spend": 0.0, "results": 0, "status": "UNKNOWN"}
             def new_adset_node():
@@ -100,59 +105,79 @@ class GoogleAdsSource(DataSource):
                 return {"name": "", "spend": 0.0, "results": 0, "status": "UNKNOWN", "adsets": defaultdict(new_adset_node)}
                 
             tree = defaultdict(new_camp_node)
-            
-            for batch in stream:
+
+            def extract_results(bidding, metrics):
+                if bidding in ("TARGET_CPA", "TARGET_ROAS", "MAXIMIZE_CONVERSIONS", "MAXIMIZE_CONVERSION_VALUE", "PERFORMANCE_MAX"):
+                    return int(metrics.conversions)
+                elif bidding in ("MAXIMIZE_CLICKS", "MANUAL_CPC"):
+                    return int(metrics.clicks)
+                elif bidding in ("TARGET_IMPRESSION_SHARE", "MANUAL_CPM", "MANUAL_CPV"):
+                    return int(metrics.impressions)
+                else:
+                    return int(metrics.conversions) if metrics.conversions > 0 else int(metrics.clicks)
+
+            # --- Обработка Campaign ---
+            req_camp = self.client.get_type("SearchGoogleAdsStreamRequest")
+            req_camp.customer_id = customer_id
+            req_camp.query = query_campaign
+            for batch in self.ga_service.search_stream(req_camp):
                 for row in batch.results:
                     camp = row.campaign
-                    ad_group = row.ad_group
-                    ad_group_ad = row.ad_group_ad
                     metrics = row.metrics
-                    
                     camp_id = str(camp.id)
-                    adset_id = str(ad_group.id)
-                    ad_id = str(ad_group_ad.ad.id)
                     
                     spend = metrics.cost_micros / 1000000.0
-                    
-                    # Определение "Результатов" на основе стратегии
                     bidding = camp.bidding_strategy_type.name if camp.bidding_strategy_type else ""
-                    if bidding in ("TARGET_CPA", "TARGET_ROAS", "MAXIMIZE_CONVERSIONS", "MAXIMIZE_CONVERSION_VALUE"):
-                        results = int(metrics.conversions)
-                    elif bidding in ("MAXIMIZE_CLICKS", "MANUAL_CPC"):
-                        results = int(metrics.clicks)
-                    elif bidding in ("TARGET_IMPRESSION_SHARE", "MANUAL_CPM", "MANUAL_CPV"):
-                        results = int(metrics.impressions)
-                    else:
-                        # Fallback: Если есть конверсии - они, иначе клики
-                        results = int(metrics.conversions) if metrics.conversions > 0 else int(metrics.clicks)
-                        
+                    results = extract_results(bidding, metrics)
+                    
                     if spend == 0 and results == 0:
                         continue
                         
                     c_node = tree[camp_id]
                     c_node["name"] = camp.name
                     c_node["status"] = camp.status.name
+                    c_node["bidding"] = bidding # Save to pass down
+                    c_node["spend"] += spend
+                    c_node["results"] += results
+
+            # --- Обработка Ads ---
+            req_ads = self.client.get_type("SearchGoogleAdsStreamRequest")
+            req_ads.customer_id = customer_id
+            req_ads.query = query_ads
+            for batch in self.ga_service.search_stream(req_ads):
+                for row in batch.results:
+                    camp_id = str(row.campaign.id)
                     
-                    a_node = c_node["adsets"][adset_id]
+                    # Если кампании почему-то нет в основном списке - пропускаем
+                    if camp_id not in tree:
+                        continue
+                        
+                    ad_group = row.ad_group
+                    ad_group_ad = row.ad_group_ad
+                    metrics = row.metrics
+                    
+                    adset_id = str(ad_group.id)
+                    ad_id = str(ad_group_ad.ad.id)
+                    
+                    spend = metrics.cost_micros / 1000000.0
+                    bidding = tree[camp_id]["bidding"]
+                    results = extract_results(bidding, metrics)
+                    
+                    if spend == 0 and results == 0:
+                        continue
+                        
+                    a_node = tree[camp_id]["adsets"][adset_id]
                     a_node["name"] = ad_group.name
                     a_node["status"] = ad_group.status.name
+                    a_node["spend"] += spend
+                    a_node["results"] += results
                     
                     ad_node = a_node["ads"][ad_id]
-                    # Ad names can be empty in some formats (like responsive search ads), provide a fallback
                     ad_node["name"] = ad_group_ad.ad.name or f"Ad {ad_id}"
                     ad_node["status"] = ad_group_ad.status.name
                     ad_node["spend"] += spend
                     ad_node["results"] += results
-                    
-            # Агрегация сумм снизу вверх
-            for c_id, c_node in tree.items():
-                for a_id, a_node in c_node["adsets"].items():
-                    a_node["spend"] = sum(ad["spend"] for ad in a_node["ads"].values())
-                    a_node["results"] = sum(ad["results"] for ad in a_node["ads"].values())
-                
-                c_node["spend"] = sum(a["spend"] for a in c_node["adsets"].values())
-                c_node["results"] = sum(a["results"] for a in c_node["adsets"].values())
-                
+            
             # Flatten
             result_rows = []
             for c_id, c_data in tree.items():
