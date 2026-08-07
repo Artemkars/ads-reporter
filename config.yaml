@@ -1,49 +1,224 @@
 clients:
-  amk:
-    name: "AMK"
-    act_id_env: "AMK_ACT_ID"
-    # Типы действий Meta, которые считаются лидом для этого клиента.
-    #
-    # Лид-форма (GenLead кампании):
-    #   - lead                     → основной тип лид-формы Meta
-    #   - onsite_conversion.lead_grouped → сгруппированные лиды (Meta дедуплицирует)
-    #
-    # WhatsApp (кампании "Лид Ватсап"):
-    #   - onsite_conversion.messaging_first_reply → первое сообщение от пользователя
-    #
-    # ВАЖНО: lead + onsite_conversion.lead_grouped часто дублируют одно событие.
-    # Если итоги задваиваются — оставьте только onsite_conversion.lead_grouped.
+  amkz_hyundai_ekibastyz:
+    name: AMKZ_Hyundai Ekibastyz
+    act_id: act_1686577352758298
     lead_action_types:
-      - "lead"
-      - "onsite_conversion.lead_grouped"
-      - "onsite_conversion.messaging_first_reply"
-
-  # Раскомментируйте и заполните при добавлении новых клиентов:
-  # jetq:
-  #   name: "JetQ"
-  #   act_id_env: "JETQ_ACT_ID"
-  #   lead_action_types:
-  #     - "lead"
-  #     - "onsite_conversion.lead_grouped"
-  #
-  # mtz:
-  #   name: "MTZ"
-  #   act_id_env: "MTZ_ACT_ID"
-  #   lead_action_types:
-  #     - "lead"
-  #     - "contact"
-  #
-  # audi:
-  #   name: "AUDI"
-  #   act_id_env: "AUDI_ACT_ID"
-  #   lead_action_types:
-  #     - "lead"
-  #     - "contact"
-  #     - "onsite_conversion.lead_grouped"
-
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  cadillac_qazaqstan_ads:
+    name: Cadillac Qazaqstan ADS
+    act_id: act_921465523570954
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_mtz_virazh:
+    name: AMKZ_MTZ_Virazh
+    act_id: act_849607084339047
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  innovatex:
+    name: InnovateX
+    act_id: act_1448896328939955
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_jetour_ekibastuz:
+    name: AMKZ_Jetour_Ekibastuz
+    act_id: act_1561318098348453
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_changan_pavlodar:
+    name: AMKZ_Changan_Pavlodar
+    act_id: act_1789548078344731
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_jetq_daagency:
+    name: AMKZ_JetQ/Daagency
+    act_id: act_1499261374602215
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_chery_pavlodar:
+    name: AMKZ_Chery_Pavlodar
+    act_id: act_1841381649802821
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_canon:
+    name: AMKZ_Canon
+    act_id: act_1386629536226419
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_haval_aktau:
+    name: AMKZ_Haval_Aktau
+    act_id: act_1925912145007648
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_chevrolet_ekibastuz:
+    name: AMKZ_Chevrolet_Ekibastuz
+    act_id: act_1404420594684720
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_tank_aktau:
+    name: AMKZ_Tank_Aktau
+    act_id: act_1189393596031096
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_jack_ekibastuz:
+    name: AMKZ_Jack_Ekibastuz
+    act_id: act_1480178203840836
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_kia_ekibastuz:
+    name: AMKZ_Kia_Ekibastuz
+    act_id: act_1569759977560277
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_kia_aktau:
+    name: AMKZ_KIA_Aktau
+    act_id: act_2048080829422446
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_da_autotrade:
+    name: AMKZ_da_AutoTrade
+    act_id: act_890824327218188
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amk:
+    name: AMK
+    act_id: act_1202497118763581
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_changan_aktau:
+    name: AMKZ_Changan_Aktau
+    act_id: act_1451761906538097
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_la_oil_kazakhstan:
+    name: AMKZ_La_Oil_Kazakhstan
+    act_id: act_1661050368502356
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_cadillac_kazakhstan:
+    name: AMKZ_Cadillac_Kazakhstan
+    act_id: act_4446485905668216
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_jetq_astana:
+    name: AMKZ_JetQ Astana
+    act_id: act_2870993986567599
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_audi_astana:
+    name: AMKZ_Audi_Astana
+    act_id: act_1376683761189514
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_toyota_aktau:
+    name: AMKZ_Toyota_Aktau
+    act_id: act_1461646398505596
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_changan_karaganda:
+    name: AMKZ_Changan_Karaganda
+    act_id: act_3143365589186571
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_geely_astana:
+    name: AMKZ_Geely_Astana
+    act_id: act_1515002436462007
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_lexus_aktau:
+    name: AMKZ_Lexus_Aktau
+    act_id: act_943354138604291
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_geely_kostanay:
+    name: AMKZ_Geely_Kostanay
+    act_id: act_1569970754784741
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  amkz_geely_karaganda:
+    name: AMKZ_Geely_Karaganda
+    act_id: act_1035642672667694
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  unknown_120996931604569:
+    name: Unknown_120996931604569
+    act_id: act_120996931604569
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  unknown_4864027116949045:
+    name: Unknown_4864027116949045
+    act_id: act_4864027116949045
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
+  unknown_1265947288969279:
+    name: Unknown_1265947288969279
+    act_id: act_1265947288969279
+    lead_action_types:
+    - lead
+    - onsite_conversion.lead_grouped
+    - onsite_conversion.messaging_first_reply
 meta_api:
-  version: "v19.0"
-  base_url: "https://graph.facebook.com"
+  version: v19.0
+  base_url: https://graph.facebook.com
   timeout_seconds: 30
   max_retries: 3
   retry_delay_seconds: 5
