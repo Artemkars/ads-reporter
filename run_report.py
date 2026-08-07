@@ -48,7 +48,7 @@ if hasattr(sys.stderr, 'reconfigure'):
 
 from report.calculator import calculate_report
 from report.excel_writer import write_excel_report
-from report.sheets_writer import write_sheets_report
+from report.sheets_writer import build_service, write_report_block
 from sources.meta import MetaAdsSource
 
 
@@ -316,17 +316,15 @@ def main() -> None:
             # 3b. Google Sheets (если задан ID таблицы)
             if sheets_id and google_creds:
                 try:
-                    sheets_url = write_sheets_report(
-                        client_report=client_report,
+                    sheets_service = build_service(google_creds)
+                    sheets_url = write_report_block(
+                        service=sheets_service,
                         spreadsheet_id=sheets_id,
-                        credentials_json=google_creds,
+                        client_report=client_report,
                     )
-                    log.info("[%s] Sheets: %s", client_name, sheets_url)
-                except Exception as sheets_err:
-                    log.error(
-                        "[%s] Ошибка записи в Sheets (Excel сохранен): %s",
-                        client_name, sheets_err
-                    )
+                    log.info("[%s] Успешно загружено в Google Sheets: %s", client_name, sheets_url)
+                except Exception as e:
+                    log.error("[%s] Ошибка записи в Google Sheets: %s", client_name, e)
 
         except Exception as exc:
             log.error(
