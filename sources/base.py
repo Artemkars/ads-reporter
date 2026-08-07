@@ -14,10 +14,10 @@ from typing import Optional
 @dataclass
 class CampaignRow:
     """
-    Единый формат строки данных по кампании.
+    Единый формат строки данных по кампании/группе/объявлению.
     Используется независимо от источника (Meta / Google / TikTok).
     """
-    campaign_name: str
+    name: str                       # название кампании/группы/объявления
     status: str                     # "ACTIVE" / "PAUSED" / "DELETED" и т.д.
     spend_usd: float                # расход в USD
     leads: int                      # количество лидов (уже отфильтровано по конфигу)
@@ -25,6 +25,7 @@ class CampaignRow:
     date_to: date
     client_id: str                  # ключ клиента из config.yaml (например, "amk")
     source: str = "meta"            # метка источника для логов и будущих расширений
+    level: str = "campaign"         # уровень: 'campaign', 'adset', 'ad'
     raw_actions: dict = field(default_factory=dict)  # все action_type → value (для отладки)
 
 

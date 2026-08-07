@@ -39,11 +39,11 @@ PANEL_HEADERS = [
 
 # Заголовки таблицы отчёта
 REPORT_HEADERS = [
-    "Кампания",
-    "Расход, $",
-    "Расход, ₸ (с НДС)",
+    "Название (Кампания / Группа / Объявление)",
+    "Расход USD",
+    "Расход ₸",
     "Лиды",
-    "Цена лида, ₸",
+    "Цена лида",
     "Статус",
 ]
 
@@ -250,8 +250,14 @@ def _build_report_block(client_report: ClientReport) -> list[list]:
         rows.append(["Нет данных за указанный период", "", "", "", "", ""])
     else:
         for row in client_report.rows:
+            prefix = ""
+            if row.level == "adset":
+                prefix = "  └─ "
+            elif row.level == "ad":
+                prefix = "      └─ "
+                
             rows.append([
-                row.campaign_name,
+                prefix + row.name,
                 row.spend_usd,
                 row.spend_kzt,
                 row.leads,

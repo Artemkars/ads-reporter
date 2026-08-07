@@ -189,8 +189,14 @@ def _write_campaign_row(
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
     bg_color = COLOR_ODD_ROW if is_even else "FFFFFF"
 
+    prefix = ""
+    if row_data.level == "adset":
+        prefix = "  └─ "
+    elif row_data.level == "ad":
+        prefix = "      └─ "
+
     values = [
-        row_data.campaign_name,
+        prefix + row_data.name,
         row_data.status,
         row_data.spend_usd,
         row_data.spend_kzt,
@@ -227,7 +233,7 @@ def _write_total_row(ws, total: ReportRow, row: int) -> None:
     border = Border(left=medium, right=medium, top=medium, bottom=medium)
 
     values = [
-        total.campaign_name,
+        total.name,
         "",
         total.spend_usd,
         total.spend_kzt,
