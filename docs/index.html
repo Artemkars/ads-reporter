@@ -348,7 +348,7 @@
     <div class="logo-icon">📊</div>
     <div class="logo-text">AdReporter <span>v1</span></div>
   </div>
-  <a class="header-link" id="sheetsLink" href="#" target="_blank">Открыть таблицу ↗</a>
+  <a class="header-link" id="sheetsLink" href="https://docs.google.com/spreadsheets/d/1GA4I7kNKiIro0-LbdjGbw1vG1c-S3AsfarF2cBemdRk/edit" target="_blank">Открыть таблицу ↗</a>
 </div>
 
 <div class="main">
@@ -385,8 +385,12 @@
         <input type="number" id="rate" placeholder="490" step="0.01">
       </div>
       <div class="form-group">
-        <label for="vat">НДС + АК %</label>
-        <input type="number" id="vat" placeholder="12" step="0.1">
+        <label for="vat">НДС %</label>
+        <input type="number" id="vat" value="16" step="0.1">
+      </div>
+      <div class="form-group">
+        <label for="ac">Комиссия (АК) %</label>
+        <input type="number" id="ac" placeholder="Например: 10" step="0.1">
       </div>
     </div>
   </div>
@@ -441,12 +445,9 @@
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
       if (saved.ghToken) document.getElementById('ghToken').value = saved.ghToken;
       if (saved.ghRepo) document.getElementById('ghRepo').value = saved.ghRepo;
-      if (saved.sheetsUrl) {
-        document.getElementById('sheetsUrl').value = saved.sheetsUrl;
-        document.getElementById('sheetsLink').href = saved.sheetsUrl;
-      }
       if (saved.rate) document.getElementById('rate').value = saved.rate;
       if (saved.vat) document.getElementById('vat').value = saved.vat;
+      if (saved.ac) document.getElementById('ac').value = saved.ac;
       return saved;
     } catch { return {}; }
   }
@@ -455,12 +456,11 @@
     const settings = {
       ghToken: document.getElementById('ghToken').value.trim(),
       ghRepo: document.getElementById('ghRepo').value.trim(),
-      sheetsUrl: document.getElementById('sheetsUrl').value.trim(),
       rate: document.getElementById('rate').value,
       vat: document.getElementById('vat').value,
+      ac: document.getElementById('ac').value,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    document.getElementById('sheetsLink').href = settings.sheetsUrl || '#';
     showStatus('success', '✓', 'Настройки сохранены');
     setTimeout(() => hideStatus(), 2000);
   }
@@ -503,9 +503,14 @@
     }
 
     const rate = document.getElementById('rate').value;
-    const vat = document.getElementById('vat').value;
-    if (!rate || !vat) {
-      showStatus('error', '⚠', 'Заполните курс и НДС');
+    const vat = document.getElementById('vat').value || 0;
+    const ac = document.getElementById('ac').value || 0;
+    
+    // Суммируем НДС и АК для скрипта (он считает общий % наценки)
+    const totalVat = parseFloat(vat) + parseFloat(ac);
+
+    if (!rate || totalVat === 0) {
+      showStatus('error', '⚠', 'Заполните курс и комиссии');
       return;
     }
 
@@ -513,9 +518,10 @@
     const dateFrom = document.getElementById('dateFrom').value;
     const dateTo = document.getElementById('dateTo').value;
 
-    // Сохраняем rate/vat для следующего раза
+    // Сохраняем значения для следующего раза
     settings.rate = rate;
     settings.vat = vat;
+    settings.ac = ac;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 
     // Блокируем кнопку
@@ -540,7 +546,7 @@
             ref: 'main',
             inputs: {
               rate_usd_kzt: rate,
-              vat_pct: vat,
+              vat_pct: totalVat.toString(),
               date_from: dateFrom || '',
               date_to: dateTo || '',
               client: client,
@@ -553,7 +559,7 @@
         btn.className = 'btn-submit success';
         btn.textContent = '✓ Запущено';
 
-        const sheetsUrl = settings.sheetsUrl || '#';
+        const sheetsUrl = 'https://docs.google.com/spreadsheets/d/1GA4I7kNKiIro0-LbdjGbw1vG1c-S3AsfarF2cBemdRk/edit';
         showStatus('success', '✓',
           `Отчёт формируется (~30 сек). Данные появятся в <a href="${sheetsUrl}" target="_blank">Google Sheets</a>`
         );
