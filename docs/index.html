@@ -6,6 +6,7 @@
   <title>Рекламный отчёт</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
   <style>
     :root {
       --bg-primary: #0f1117;
@@ -132,6 +133,71 @@
     .card-title {
       font-size: 13px;
       font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 24px;
+    }
+
+    select, input {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    /* Choices.js Dark Theme Overrides */
+    .choices {
+      margin-bottom: 0;
+    }
+    .choices[data-type*="select-one"]::after {
+      border-color: var(--text-secondary) transparent transparent transparent;
+    }
+    .choices[data-type*="select-one"].is-open::after {
+      border-color: transparent transparent var(--text-secondary) transparent;
+      margin-top: -7.5px;
+    }
+    .choices__inner {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      min-height: 44px;
+      padding: 4px 14px;
+      font-size: 14px;
+    }
+    .choices.is-focused .choices__inner, .choices.is-open .choices__inner {
+      border-color: var(--border-focus);
+      background: var(--bg-input);
+      box-shadow: 0 0 0 4px var(--accent-glow);
+    }
+    .choices__list--dropdown {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+    }
+    .choices__list--dropdown .choices__item {
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+    .choices__list--dropdown .choices__item--selectable.is-highlighted {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+    .choices__input {
+      background: var(--bg-hover) !important;
+      color: var(--text-primary) !important;
+      border-radius: var(--radius-sm);
+    }
+    .choices__input::placeholder {
+      color: var(--text-secondary);
+    }  font-weight: 600;
       color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.8px;
@@ -602,8 +668,16 @@
 
     document.getElementById('dateTo').value = today.toISOString().split('T')[0];
     document.getElementById('dateFrom').value = weekAgo.toISOString().split('T')[0];
+
+    new Choices('#client', {
+      searchEnabled: true,
+      itemSelectText: '',
+      noResultsText: 'Не найдено',
+      noChoicesText: 'Нет кабинетов',
+    });
   });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
 </body>
 </html>
