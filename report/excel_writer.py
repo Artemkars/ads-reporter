@@ -114,7 +114,7 @@ def write_excel_report(
         
         # Заголовок сводки
         title_cell = ws.cell(row=current_row, column=1)
-        title_cell.value = "ОБЩАЯ СВОДКА (Meta + Google)"
+        title_cell.value = "ОБЩАЯ СВОДКА (Meta + Google + TikTok)"
         title_cell.font = Font(name="Calibri", size=12, bold=True, color=COLOR_TITLE_FG)
         title_cell.alignment = Alignment(horizontal="left", vertical="center")
         _merge(ws, current_row, 1, current_row, len(COLUMNS))

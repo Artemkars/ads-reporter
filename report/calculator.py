@@ -141,5 +141,9 @@ def _format_status(status: str) -> str:
         # Google Ads statuses
         "ENABLED": "Активна",
         "REMOVED": "Удалена",
+        # TikTok Ads statuses
+        "ENABLE": "Активна",
+        "DISABLE": "Остановлена",
+        "FROZEN": "Заморожена",
     }
     return mapping.get(status.upper(), status)

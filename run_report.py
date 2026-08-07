@@ -51,6 +51,7 @@ from report.excel_writer import write_excel_report
 from report.sheets_writer import build_service, write_report_block
 from sources.meta import MetaAdsSource
 from sources.google import GoogleAdsSource
+from sources.tiktok import TikTokAdsSource
 
 
 # ---------------------------------------------------------------------------
@@ -250,6 +251,14 @@ def main() -> None:
         )
     else:
         log.info("Google Ads credentials incomplete, Google Ads will be skipped.")
+        
+    # Инициализируем источник данных TikTok Ads
+    tiktok_access_token = os.getenv("TIKTOK_ACCESS_TOKEN")
+    tiktok_source = None
+    if tiktok_access_token:
+        tiktok_source = TikTokAdsSource(access_token=tiktok_access_token)
+    else:
+        log.info("TikTok Ads credentials incomplete, TikTok Ads will be skipped.")
 
     # Выбираем клиентов для обработки
     if args.client:
@@ -352,6 +361,32 @@ def main() -> None:
                     reports_to_write.append(google_report)
                 else:
                     log.warning("[%s] Нет данных Google Ads за период", client_name)
+
+            # 2.6. Сбор данных из TikTok Ads (если настроено)
+            tiktok_advertiser_id = client_cfg.get("tiktok_advertiser_id")
+            if tiktok_source and tiktok_advertiser_id:
+                log.info("[%s] ─── Сбор данных TikTok Ads ─────────────────", client_name)
+                tiktok_campaigns = tiktok_source.fetch(
+                    client_id=client_key,
+                    act_id=tiktok_advertiser_id,
+                    lead_action_types=[], # Not needed for TikTok
+                    date_from=date_from,
+                    date_to=date_to,
+                )
+                if tiktok_campaigns:
+                    tiktok_report = calculate_report(
+                        client_id=client_key,
+                        client_name=client_name,
+                        campaigns=tiktok_campaigns,
+                        rate_usd_kzt=rate,
+                        vat_pct=vat,
+                        date_from=d_from_label,
+                        date_to=d_to_label,
+                        source_name="TikTok Ads",
+                    )
+                    reports_to_write.append(tiktok_report)
+                else:
+                    log.warning("[%s] Нет данных TikTok Ads за период", client_name)
 
             # 3a. Excel (если не отключен флагом --no-excel)
             if not args.no_excel:

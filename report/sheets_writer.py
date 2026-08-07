@@ -306,7 +306,7 @@ def write_grand_summary_block(
     avg_cost = round(total_spend_kzt / total_leads, 2) if total_leads > 0 else 0.0
     
     rows = [
-        ["ОБЩАЯ СВОДКА (Meta + Google)"],
+        ["ОБЩАЯ СВОДКА (Meta + Google + TikTok)"],
         ["Общий расход $", "Общий расход ₸", "Всего лидов", "Ср. цена лида"],
         [round(total_spend_usd, 2), round(total_spend_kzt, 2), total_leads, avg_cost],
     ]
