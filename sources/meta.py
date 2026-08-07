@@ -276,7 +276,7 @@ class MetaAdsSource(DataSource):
 
                 if resp.status_code >= 500:
                     wait = self.retry_delay * attempt
-                    logger.warning("Серверная ошибка Meta API (%d). Ждём %d сек...", resp.status_code, wait)
+                    logger.warning("Серверная ошибка Meta API (%d). Ждём %d сек... Ответ: %s", resp.status_code, wait, resp.text)
                     time.sleep(wait)
                     continue
 
