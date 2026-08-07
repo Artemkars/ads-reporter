@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Рекламный отчёт</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0f1117;
+      --bg-card: #1a1d27;
+      --bg-input: #252836;
+      --bg-hover: #2a2d3a;
+      --accent: #6c5ce7;
+      --accent-hover: #7c6df7;
+      --accent-glow: rgba(108, 92, 231, 0.3);
+      --success: #00b894;
+      --success-glow: rgba(0, 184, 148, 0.3);
+      --warning: #fdcb6e;
+      --error: #e17055;
+      --text-primary: #e8e8ec;
+      --text-secondary: #8b8da0;
+      --text-muted: #5a5c6f;
+      --border: #2d2f3e;
+      --border-focus: #6c5ce7;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Header */
+    .header {
+      width: 100%;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 17, 23, 0.8);
+      backdrop-filter: blur(20px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent), #a29bfe);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .logo-text {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .logo-text span {
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .header-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 13px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+
+    .header-link:hover {
+      color: var(--text-primary);
+      border-color: var(--text-muted);
+      background: var(--bg-hover);
+    }
+
+    /* Main */
+    .main {
+      width: 100%;
+      max-width: 560px;
+      padding: 48px 24px 80px;
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 15px;
+      margin-bottom: 36px;
+      line-height: 1.5;
+    }
+
+    /* Card */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 20px;
+    }
+
+    /* Form */
+    .form-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group.full {
+      flex: 1 1 100%;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    select, input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    select { cursor: pointer; }
+    select option { background: var(--bg-card); }
+
+    input::placeholder { color: var(--text-muted); }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.6);
+      cursor: pointer;
+    }
+
+    /* Button */
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--accent), #a29bfe);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: white;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px var(--accent-glow);
+    }
+
+    .btn-submit:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-submit.loading {
+      background: var(--bg-input);
+      color: var(--text-secondary);
+    }
+
+    .btn-submit.success {
+      background: linear-gradient(135deg, var(--success), #55efc4);
+    }
+
+    .btn-submit.error {
+      background: linear-gradient(135deg, var(--error), #fab1a0);
+    }
+
+    /* Status */
+    .status {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      margin-top: 16px;
+      line-height: 1.5;
+    }
+
+    .status.show { display: flex; }
+
+    .status.info {
+      background: rgba(108, 92, 231, 0.1);
+      border: 1px solid rgba(108, 92, 231, 0.2);
+      color: #a29bfe;
+    }
+
+    .status.success {
+      background: rgba(0, 184, 148, 0.1);
+      border: 1px solid rgba(0, 184, 148, 0.2);
+      color: var(--success);
+    }
+
+    .status.error {
+      background: rgba(225, 112, 85, 0.1);
+      border: 1px solid rgba(225, 112, 85, 0.2);
+      color: var(--error);
+    }
+
+    .status-icon { font-size: 18px; flex-shrink: 0; }
+
+    .status a {
+      color: inherit;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Settings card */
+    .settings-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 28px;
+      margin-bottom: 20px;
+    }
+
+    .settings-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .settings-toggle-text {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .settings-toggle-arrow {
+      color: var(--text-muted);
+      transition: transform 0.2s;
+      font-size: 12px;
+    }
+
+    .settings-body {
+      display: none;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      margin-top: 16px;
+    }
+
+    .settings-body.open { display: block; }
+    .settings-toggle-arrow.open { transform: rotate(180deg); }
+
+    .hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .form-row { flex-direction: column; }
+      .main { padding: 32px 16px 60px; }
+      .title { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">📊</div>
+    <div class="logo-text">AdReporter <span>v1</span></div>
+  </div>
+  <a class="header-link" id="sheetsLink" href="#" target="_blank">Открыть таблицу ↗</a>
+</div>
+
+<div class="main">
+  <h1 class="title">Рекламный отчёт</h1>
+  <p class="subtitle">Заполните параметры и нажмите кнопку — данные из Meta Ads появятся в Google Sheets.</p>
+
+  <!-- Основные параметры -->
+  <div class="card">
+    <div class="card-title">Параметры отчёта</div>
+
+    <div class="form-row">
+      <div class="form-group full">
+        <label for="client">Кабинет</label>
+        <select id="client">
+          <option value="amk">AMK</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="dateFrom">Дата от</label>
+        <input type="date" id="dateFrom">
+      </div>
+      <div class="form-group">
+        <label for="dateTo">Дата до</label>
+        <input type="date" id="dateTo">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="rate">Курс USD/₸</label>
+        <input type="number" id="rate" placeholder="490" step="0.01">
+      </div>
+      <div class="form-group">
+        <label for="vat">НДС + АК %</label>
+        <input type="number" id="vat" placeholder="12" step="0.1">
+      </div>
+    </div>
+  </div>
+
+  <!-- Кнопка -->
+  <button class="btn-submit" id="submitBtn" onclick="generateReport()">
+    Сформировать отчёт
+  </button>
+
+  <!-- Статус -->
+  <div class="status" id="statusBlock">
+    <span class="status-icon" id="statusIcon"></span>
+    <span id="statusText"></span>
+  </div>
+
+  <!-- Настройки (GitHub Token) -->
+  <div class="settings-card">
+    <div class="settings-toggle" onclick="toggleSettings()">
+      <span class="settings-toggle-text">⚙️ Настройки подключения</span>
+      <span class="settings-toggle-arrow" id="settingsArrow">▼</span>
+    </div>
+    <div class="settings-body" id="settingsBody">
+      <div class="form-group">
+        <label for="ghToken">GitHub Token</label>
+        <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
+        <div class="hint">Personal Access Token с правами на Actions. Сохраняется только в вашем браузере.</div>
+      </div>
+      <div class="form-group" style="margin-top: 12px;">
+        <label for="ghRepo">Репозиторий</label>
+        <input type="text" id="ghRepo" placeholder="username/ads-reporter">
+        <div class="hint">Формат: owner/repo</div>
+      </div>
+      <div class="form-group" style="margin-top: 12px;">
+        <label for="sheetsUrl">Ссылка на Google Sheets</label>
+        <input type="url" id="sheetsUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+      </div>
+      <button class="btn-submit" style="margin-top: 16px; background: var(--bg-input); color: var(--text-secondary);" onclick="saveSettings()">
+        Сохранить настройки
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ──────────────────────────────────────────────
+  // Настройки (localStorage)
+  // ──────────────────────────────────────────────
+  const STORAGE_KEY = 'adreporter_settings';
+
+  function loadSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (saved.ghToken) document.getElementById('ghToken').value = saved.ghToken;
+      if (saved.ghRepo) document.getElementById('ghRepo').value = saved.ghRepo;
+      if (saved.sheetsUrl) {
+        document.getElementById('sheetsUrl').value = saved.sheetsUrl;
+        document.getElementById('sheetsLink').href = saved.sheetsUrl;
+      }
+      if (saved.rate) document.getElementById('rate').value = saved.rate;
+      if (saved.vat) document.getElementById('vat').value = saved.vat;
+      return saved;
+    } catch { return {}; }
+  }
+
+  function saveSettings() {
+    const settings = {
+      ghToken: document.getElementById('ghToken').value.trim(),
+      ghRepo: document.getElementById('ghRepo').value.trim(),
+      sheetsUrl: document.getElementById('sheetsUrl').value.trim(),
+      rate: document.getElementById('rate').value,
+      vat: document.getElementById('vat').value,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    document.getElementById('sheetsLink').href = settings.sheetsUrl || '#';
+    showStatus('success', '✓', 'Настройки сохранены');
+    setTimeout(() => hideStatus(), 2000);
+  }
+
+  function toggleSettings() {
+    const body = document.getElementById('settingsBody');
+    const arrow = document.getElementById('settingsArrow');
+    body.classList.toggle('open');
+    arrow.classList.toggle('open');
+  }
+
+  // ──────────────────────────────────────────────
+  // Статус
+  // ──────────────────────────────────────────────
+  function showStatus(type, icon, text) {
+    const block = document.getElementById('statusBlock');
+    block.className = `status show ${type}`;
+    document.getElementById('statusIcon').textContent = icon;
+    document.getElementById('statusText').innerHTML = text;
+  }
+
+  function hideStatus() {
+    document.getElementById('statusBlock').className = 'status';
+  }
+
+  // ──────────────────────────────────────────────
+  // Основная логика: запуск отчёта
+  // ──────────────────────────────────────────────
+  async function generateReport() {
+    const btn = document.getElementById('submitBtn');
+    const settings = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+
+    // Валидация
+    const token = settings.ghToken;
+    const repo = settings.ghRepo;
+    if (!token || !repo) {
+      showStatus('error', '⚠', 'Откройте настройки и укажите GitHub Token и репозиторий');
+      toggleSettings();
+      return;
+    }
+
+    const rate = document.getElementById('rate').value;
+    const vat = document.getElementById('vat').value;
+    if (!rate || !vat) {
+      showStatus('error', '⚠', 'Заполните курс и НДС');
+      return;
+    }
+
+    const client = document.getElementById('client').value;
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo = document.getElementById('dateTo').value;
+
+    // Сохраняем rate/vat для следующего раза
+    settings.rate = rate;
+    settings.vat = vat;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+
+    // Блокируем кнопку
+    btn.disabled = true;
+    btn.className = 'btn-submit loading';
+    btn.innerHTML = '<span class="spinner"></span> Запускаю...';
+    showStatus('info', '🔄', 'Отправляю запрос на GitHub Actions...');
+
+    try {
+      // Вызываем GitHub Actions workflow_dispatch
+      const [owner, repoName] = repo.split('/');
+      const response = await fetch(
+        `https://api.github.com/repos/${owner}/${repoName}/actions/workflows/weekly_report.yml/dispatches`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ref: 'main',
+            inputs: {
+              rate_usd_kzt: rate,
+              vat_pct: vat,
+              date_from: dateFrom || '',
+              date_to: dateTo || '',
+              client: client,
+            },
+          }),
+        }
+      );
+
+      if (response.status === 204 || response.status === 200) {
+        btn.className = 'btn-submit success';
+        btn.textContent = '✓ Запущено';
+
+        const sheetsUrl = settings.sheetsUrl || '#';
+        showStatus('success', '✓',
+          `Отчёт формируется (~30 сек). Данные появятся в <a href="${sheetsUrl}" target="_blank">Google Sheets</a>`
+        );
+
+        // Пытаемся получить статус запуска
+        setTimeout(() => checkWorkflowStatus(owner, repoName, token, sheetsUrl), 10000);
+      } else {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || `HTTP ${response.status}`);
+      }
+    } catch (error) {
+      btn.className = 'btn-submit error';
+      btn.textContent = 'Ошибка';
+      showStatus('error', '✗', `Ошибка: ${error.message}`);
+    }
+
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.className = 'btn-submit';
+      btn.textContent = 'Сформировать отчёт';
+    }, 5000);
+  }
+
+  async function checkWorkflowStatus(owner, repo, token, sheetsUrl) {
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/actions/runs?per_page=1&status=in_progress`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (data.workflow_runs && data.workflow_runs.length > 0) {
+        showStatus('info', '⏳',
+          `Скрипт работает... Данные скоро появятся в <a href="${sheetsUrl}" target="_blank">Google Sheets</a>`
+        );
+        setTimeout(() => checkWorkflowStatus(owner, repo, token, sheetsUrl), 10000);
+      } else {
+        showStatus('success', '✓',
+          `Готово! Откройте <a href="${sheetsUrl}" target="_blank">Google Sheets</a> — данные на месте.`
+        );
+      }
+    } catch {
+      // Не критично — просто не обновляем статус
+    }
+  }
+
+  // ──────────────────────────────────────────────
+  // Инициализация
+  // ──────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    loadSettings();
+
+    // Устанавливаем даты по умолчанию (последние 7 дней)
+    const today = new Date();
+    const weekAgo = new Date(today);
+    weekAgo.setDate(today.getDate() - 7);
+
+    document.getElementById('dateTo').value = today.toISOString().split('T')[0];
+    document.getElementById('dateFrom').value = weekAgo.toISOString().split('T')[0];
+  });
+</script>
+
+</body>
+</html>

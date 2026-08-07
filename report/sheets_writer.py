@@ -2,20 +2,16 @@
 report/sheets_writer.py
 
 Запись отчёта в Google Sheets через Google Sheets API v4.
+
+Два режима работы:
+1. Инициализация "Панели управления" — лист-запросчик, где пользователь
+   указывает кабинет, даты, курс, НДС
+2. Запись отчёта — красивый блок с шапкой периода, таблицей кампаний и итогом
+
 Авторизация — сервисный аккаунт (JSON-ключ из переменной окружения GOOGLE_CREDENTIALS_JSON).
-
-Структура листа в Sheets:
-  - Один лист на клиента (создаётся автоматически если не существует)
-  - Строка-заголовок (пишется один раз при создании листа)
-  - Каждый запуск добавляет строки в конец (append), не перезаписывает
-  - Столбцы: Дата запуска | Период | Курс | НДС | Кампания | Статус |
-             Расход $ | Расход ₸ | Лиды | Цена лида ₸ | ИТОГО?
-
-Таким образом в одной Sheets-таблице накапливается история всех недель.
 """
 import json
 import logging
-import os
 from datetime import datetime
 from typing import Optional
 
@@ -29,234 +25,445 @@ logger = logging.getLogger(__name__)
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
-# Заголовки таблицы
-HEADER = [
-    "Дата запуска",
-    "Период",
+PANEL_SHEET_NAME = "Панель"
+
+# Заголовки панели управления
+PANEL_HEADERS = [
+    "Кабинет",
+    "Дата от (ГГГГ-ММ-ДД)",
+    "Дата до (ГГГГ-ММ-ДД)",
     "Курс USD/₸",
-    "НДС %",
+    "НДС + АК %",
+    "Статус",
+]
+
+# Заголовки таблицы отчёта
+REPORT_HEADERS = [
     "Кампания",
     "Статус",
     "Расход, $",
     "Расход, ₸ (с НДС)",
     "Лиды",
     "Цена лида, ₸",
-    "Итоговая строка",
 ]
 
 
-def write_sheets_report(
-    client_report: ClientReport,
-    spreadsheet_id: str,
-    credentials_json: str,
-) -> str:
-    """
-    Записывает отчёт клиента в Google Sheets (append в конец листа).
+# ===========================================================================
+# Публичные функции
+# ===========================================================================
 
-    Args:
-        client_report: рассчитанный отчёт
-        spreadsheet_id: ID таблицы Google Sheets
-            (часть URL: docs.google.com/spreadsheets/d/ЭТОТ_ID/edit)
-        credentials_json: JSON-строка с ключом сервисного аккаунта
-            (значение переменной окружения GOOGLE_CREDENTIALS_JSON)
-
-    Returns:
-        URL таблицы.
-    """
-    try:
-        service = _build_service(credentials_json)
-        sheet_name = client_report.client_name  # "AMK", "JetQ" и т.д.
-
-        # Убедимся что лист существует, создадим если нет
-        _ensure_sheet_exists(service, spreadsheet_id, sheet_name)
-
-        # Проверяем — если лист пустой, пишем заголовок
-        _ensure_header(service, spreadsheet_id, sheet_name)
-
-        # Формируем строки данных
-        rows = _build_rows(client_report)
-
-        # Append в конец листа
-        body = {"values": rows}
-        result = (
-            service.spreadsheets()
-            .values()
-            .append(
-                spreadsheetId=spreadsheet_id,
-                range=f"'{sheet_name}'!A1",
-                valueInputOption="USER_ENTERED",
-                insertDataOption="INSERT_ROWS",
-                body=body,
-            )
-            .execute()
-        )
-
-        updated_range = result.get("updates", {}).get("updatedRange", "?")
-        url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit"
-        logger.info(
-            "[%s] Google Sheets обновлён: %s | Диапазон: %s",
-            client_report.client_name,
-            url,
-            updated_range,
-        )
-        return url
-
-    except HttpError as exc:
-        logger.error(
-            "[%s] Ошибка Google Sheets API: %s", client_report.client_name, exc
-        )
-        raise
-    except Exception as exc:
-        logger.error(
-            "[%s] Ошибка при записи в Sheets: %s", client_report.client_name, exc
-        )
-        raise
-
-
-# ---------------------------------------------------------------------------
-# Внутренние функции
-# ---------------------------------------------------------------------------
-
-def _build_service(credentials_json: str):
+def build_service(credentials_json: str):
     """Создаёт авторизованный клиент Sheets API."""
     info = json.loads(credentials_json)
     creds = Credentials.from_service_account_info(info, scopes=SCOPES)
     return build("sheets", "v4", credentials=creds, cache_discovery=False)
 
 
-def _ensure_sheet_exists(service, spreadsheet_id: str, sheet_name: str) -> None:
-    """Создаёт лист с нужным именем если он не существует."""
-    meta = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
-    existing = [s["properties"]["title"] for s in meta.get("sheets", [])]
-
-    if sheet_name in existing:
+def ensure_panel_exists(service, spreadsheet_id: str) -> None:
+    """
+    Создаёт лист 'Панель' с инструкцией если его нет.
+    Если он уже есть — ничего не делает.
+    """
+    if _sheet_exists(service, spreadsheet_id, PANEL_SHEET_NAME):
         return
 
-    logger.info("Создаём лист '%s' в таблице...", sheet_name)
-    body = {
-        "requests": [
-            {
-                "addSheet": {
-                    "properties": {
-                        "title": sheet_name,
-                        "gridProperties": {"frozenRowCount": 1},
-                    }
-                }
-            }
-        ]
-    }
-    service.spreadsheets().batchUpdate(
-        spreadsheetId=spreadsheet_id, body=body
-    ).execute()
+    logger.info("Создаём лист '%s'...", PANEL_SHEET_NAME)
 
+    # Создаём лист
+    _create_sheet(service, spreadsheet_id, PANEL_SHEET_NAME, frozen_rows=2)
 
-def _ensure_header(service, spreadsheet_id: str, sheet_name: str) -> None:
-    """Пишет строку заголовка если лист пустой."""
-    result = (
-        service.spreadsheets()
-        .values()
-        .get(
-            spreadsheetId=spreadsheet_id,
-            range=f"'{sheet_name}'!A1:A1",
-        )
-        .execute()
-    )
+    # Пишем инструкцию и заголовки
+    rows = [
+        [
+            "Заполните строку 3 и запустите скрипт: python run_from_sheets.py",
+            "", "", "", "", ""
+        ],
+        PANEL_HEADERS,
+        ["amk", "", "", "490", "12", ""],  # пример-заготовка
+    ]
 
-    existing = result.get("values", [])
-    if existing:
-        return  # Заголовок уже есть
-
-    logger.info("Пишем заголовок в лист '%s'...", sheet_name)
     service.spreadsheets().values().update(
         spreadsheetId=spreadsheet_id,
-        range=f"'{sheet_name}'!A1",
+        range=f"'{PANEL_SHEET_NAME}'!A1",
         valueInputOption="USER_ENTERED",
-        body={"values": [HEADER]},
+        body={"values": rows},
     ).execute()
 
-    # Делаем заголовок жирным
-    try:
-        meta = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
-        sheet_id = next(
-            s["properties"]["sheetId"]
-            for s in meta["sheets"]
-            if s["properties"]["title"] == sheet_name
-        )
-        service.spreadsheets().batchUpdate(
-            spreadsheetId=spreadsheet_id,
-            body={
-                "requests": [
-                    {
-                        "repeatCell": {
-                            "range": {
-                                "sheetId": sheet_id,
-                                "startRowIndex": 0,
-                                "endRowIndex": 1,
-                            },
-                            "cell": {
-                                "userEnteredFormat": {
-                                    "textFormat": {"bold": True},
-                                    "backgroundColor": {
-                                        "red": 0.122,
-                                        "green": 0.220,
-                                        "blue": 0.392,
-                                    },
-                                    "foregroundColor": {
-                                        "red": 1.0,
-                                        "green": 1.0,
-                                        "blue": 1.0,
-                                    },
-                                }
-                            },
-                            "fields": "userEnteredFormat(textFormat,backgroundColor,foregroundColor)",
-                        }
-                    }
-                ]
-            },
-        ).execute()
-    except Exception as fmt_err:
-        logger.warning("Не удалось применить форматирование заголовка: %s", fmt_err)
+    # Форматирование
+    sheet_id = _get_sheet_id(service, spreadsheet_id, PANEL_SHEET_NAME)
+    requests = [
+        # Строка 1 — инструкция (серый фон, italic)
+        _format_row_request(sheet_id, 0, 1, bold=False, italic=True,
+                            bg=(0.95, 0.95, 0.95), fg=(0.4, 0.4, 0.4)),
+        # Строка 2 — заголовки (тёмно-синий)
+        _format_row_request(sheet_id, 1, 2, bold=True,
+                            bg=(0.12, 0.22, 0.39), fg=(1, 1, 1)),
+        # Ширина столбцов
+        _col_width_request(sheet_id, 0, 200),   # Кабинет
+        _col_width_request(sheet_id, 1, 180),   # Дата от
+        _col_width_request(sheet_id, 2, 180),   # Дата до
+        _col_width_request(sheet_id, 3, 120),   # Курс
+        _col_width_request(sheet_id, 4, 120),   # НДС
+        _col_width_request(sheet_id, 5, 250),   # Статус
+    ]
+    service.spreadsheets().batchUpdate(
+        spreadsheetId=spreadsheet_id,
+        body={"requests": requests},
+    ).execute()
+
+    logger.info("Панель управления создана")
 
 
-def _build_rows(client_report: ClientReport) -> list[list]:
-    """Формирует список строк для записи в Sheets."""
-    now = datetime.now().strftime("%d.%m.%Y %H:%M")
-    period = client_report.date_label
-    rate = client_report.rate_usd_kzt
-    vat = client_report.vat_pct
+def read_panel(service, spreadsheet_id: str) -> Optional[dict]:
+    """
+    Читает строку 3 из листа 'Панель' (первый запрос пользователя).
 
+    Returns:
+        dict с ключами: client_key, date_from, date_to, rate, vat
+        или None если данных нет.
+    """
+    result = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheet_id,
+        range=f"'{PANEL_SHEET_NAME}'!A3:E3",
+    ).execute()
+
+    values = result.get("values", [])
+    if not values or not values[0]:
+        return None
+
+    row = values[0]
+    # Дополняем до 5 элементов
+    while len(row) < 5:
+        row.append("")
+
+    client_key = (row[0] or "").strip().lower()
+    date_from = (row[1] or "").strip()
+    date_to = (row[2] or "").strip()
+    rate_str = (row[3] or "").strip().replace(",", ".").replace(" ", "")
+    vat_str = (row[4] or "").strip().replace(",", ".").replace(" ", "")
+
+    if not client_key:
+        return None
+
+    return {
+        "client_key": client_key,
+        "date_from": date_from if date_from else None,
+        "date_to": date_to if date_to else None,
+        "rate": float(rate_str) if rate_str else None,
+        "vat": float(vat_str) if vat_str else None,
+    }
+
+
+def update_panel_status(service, spreadsheet_id: str, status: str) -> None:
+    """Обновляет колонку 'Статус' в строке 3 панели."""
+    service.spreadsheets().values().update(
+        spreadsheetId=spreadsheet_id,
+        range=f"'{PANEL_SHEET_NAME}'!F3",
+        valueInputOption="USER_ENTERED",
+        body={"values": [[status]]},
+    ).execute()
+
+
+def write_report_block(
+    service,
+    spreadsheet_id: str,
+    client_report: ClientReport,
+) -> str:
+    """
+    Записывает отчёт красивым блоком на лист клиента.
+
+    Каждый запуск добавляет новый блок:
+    ┌──────────────────────────────────────────────────┐
+    │ Период: 01.07 – 07.07.2026 | Курс: 490 | НДС 12% │
+    ├──────────────────────────────────────────────────┤
+    │ Кампания | Статус | Расход $ | Расход ₸ | ...    │
+    │ ...данные...                                      │
+    │ ИТОГО    |        | 3227.34  | 1771164  | ...    │
+    └──────────────────────────────────────────────────┘
+    (пустая строка)
+
+    Returns:
+        URL таблицы.
+    """
+    sheet_name = client_report.client_name
+
+    # Создаём лист если не существует
+    if not _sheet_exists(service, spreadsheet_id, sheet_name):
+        _create_sheet(service, spreadsheet_id, sheet_name, frozen_rows=0)
+        logger.info("Создан лист '%s'", sheet_name)
+
+    # Определяем следующую свободную строку
+    next_row = _get_next_empty_row(service, spreadsheet_id, sheet_name)
+
+    # Формируем блок строк
+    rows = _build_report_block(client_report)
+
+    # Записываем блок
+    start_cell = f"'{sheet_name}'!A{next_row}"
+    service.spreadsheets().values().update(
+        spreadsheetId=spreadsheet_id,
+        range=start_cell,
+        valueInputOption="USER_ENTERED",
+        body={"values": rows},
+    ).execute()
+
+    # Форматирование блока
+    sheet_id = _get_sheet_id(service, spreadsheet_id, sheet_name)
+    _format_report_block(service, spreadsheet_id, sheet_id,
+                         next_row, len(client_report.rows))
+
+    # Автоширина колонок
+    _auto_col_widths(service, spreadsheet_id, sheet_id)
+
+    url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit"
+    logger.info(
+        "[%s] Отчёт записан в Sheets: строки %d–%d",
+        client_report.client_name, next_row, next_row + len(rows) - 1,
+    )
+    return url
+
+
+# ===========================================================================
+# Формирование блока данных
+# ===========================================================================
+
+def _build_report_block(client_report: ClientReport) -> list[list]:
+    """Формирует список строк для одного блока отчёта."""
     rows = []
 
-    # Строки кампаний
+    # Строка 1: шапка периода
+    rows.append([
+        f"Период: {client_report.date_label}",
+        "",
+        f"Курс: {client_report.rate_usd_kzt:,.0f} ₸",
+        f"НДС + АК: {client_report.vat_pct}%",
+        "",
+        f"Источник: Meta Ads",
+    ])
+
+    # Строка 2: заголовки таблицы
+    rows.append(REPORT_HEADERS)
+
+    # Строки данных
     for row in client_report.rows:
         rows.append([
-            now,
-            period,
-            rate,
-            vat,
             row.campaign_name,
             row.status,
             row.spend_usd,
             row.spend_kzt,
             row.leads,
             row.cost_per_lead if row.cost_per_lead else 0,
-            "",  # не итоговая
         ])
 
     # Итоговая строка
     t = client_report.total
     rows.append([
-        now,
-        period,
-        rate,
-        vat,
         "ИТОГО",
         "",
         t.spend_usd,
         t.spend_kzt,
         t.leads,
         t.cost_per_lead if t.cost_per_lead else 0,
-        "ДА",  # маркер итоговой строки
     ])
 
+    # Пустая строка-разделитель
+    rows.append([""])
+
     return rows
+
+
+# ===========================================================================
+# Форматирование
+# ===========================================================================
+
+def _format_report_block(
+    service, spreadsheet_id: str, sheet_id: int,
+    start_row: int, data_rows_count: int
+) -> None:
+    """Применяет форматирование к блоку отчёта."""
+    # start_row — 1-indexed (номер строки в Sheets)
+    # В API batchUpdate используется 0-indexed
+    r = start_row - 1  # 0-indexed
+
+    header_row = r          # шапка периода
+    cols_row = r + 1        # заголовки колонок
+    data_start = r + 2      # первая строка данных
+    total_row = data_start + data_rows_count  # ИТОГО
+
+    requests = [
+        # Шапка периода — голубой фон, жирный
+        _format_row_request(sheet_id, header_row, header_row + 1,
+                            bold=True, bg=(0.82, 0.88, 0.95), fg=(0.12, 0.22, 0.39)),
+        # Заголовки колонок — тёмно-синий
+        _format_row_request(sheet_id, cols_row, cols_row + 1,
+                            bold=True, bg=(0.12, 0.22, 0.39), fg=(1, 1, 1)),
+        # Итоговая строка — жирный, светло-голубой фон
+        _format_row_request(sheet_id, total_row, total_row + 1,
+                            bold=True, bg=(0.84, 0.89, 0.94), fg=(0.12, 0.22, 0.39)),
+        # Рамки вокруг всего блока (данные + итого)
+        {
+            "updateBorders": {
+                "range": {
+                    "sheetId": sheet_id,
+                    "startRowIndex": cols_row,
+                    "endRowIndex": total_row + 1,
+                    "startColumnIndex": 0,
+                    "endColumnIndex": 6,
+                },
+                "top": _border_style(),
+                "bottom": _border_style(),
+                "left": _border_style(),
+                "right": _border_style(),
+                "innerHorizontal": _border_style(style="DOTTED"),
+                "innerVertical": _border_style(style="DOTTED"),
+            }
+        },
+        # Числовой формат для столбцов C-D (расходы) и F (цена лида)
+        _number_format_request(sheet_id, data_start, total_row + 1, 2, 3, "#,##0.00"),
+        _number_format_request(sheet_id, data_start, total_row + 1, 3, 4, "#,##0 ₸"),
+        _number_format_request(sheet_id, data_start, total_row + 1, 5, 6, "#,##0 ₸"),
+    ]
+
+    try:
+        service.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body={"requests": requests},
+        ).execute()
+    except Exception as fmt_err:
+        logger.warning("Ошибка форматирования: %s", fmt_err)
+
+
+def _auto_col_widths(service, spreadsheet_id: str, sheet_id: int) -> None:
+    """Задаёт фиксированную ширину столбцов отчёта."""
+    requests = [
+        _col_width_request(sheet_id, 0, 420),   # Кампания
+        _col_width_request(sheet_id, 1, 120),   # Статус
+        _col_width_request(sheet_id, 2, 110),   # Расход $
+        _col_width_request(sheet_id, 3, 150),   # Расход ₸
+        _col_width_request(sheet_id, 4, 80),    # Лиды
+        _col_width_request(sheet_id, 5, 130),   # Цена лида
+    ]
+    try:
+        service.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body={"requests": requests},
+        ).execute()
+    except Exception:
+        pass
+
+
+# ===========================================================================
+# Утилиты для Sheets API
+# ===========================================================================
+
+def _sheet_exists(service, spreadsheet_id: str, sheet_name: str) -> bool:
+    meta = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+    return sheet_name in [s["properties"]["title"] for s in meta.get("sheets", [])]
+
+
+def _create_sheet(service, spreadsheet_id: str, sheet_name: str,
+                  frozen_rows: int = 0) -> None:
+    body = {
+        "requests": [{
+            "addSheet": {
+                "properties": {
+                    "title": sheet_name,
+                    "gridProperties": {"frozenRowCount": frozen_rows},
+                }
+            }
+        }]
+    }
+    service.spreadsheets().batchUpdate(
+        spreadsheetId=spreadsheet_id, body=body
+    ).execute()
+
+
+def _get_sheet_id(service, spreadsheet_id: str, sheet_name: str) -> int:
+    meta = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+    for s in meta["sheets"]:
+        if s["properties"]["title"] == sheet_name:
+            return s["properties"]["sheetId"]
+    raise ValueError(f"Лист '{sheet_name}' не найден")
+
+
+def _get_next_empty_row(service, spreadsheet_id: str, sheet_name: str) -> int:
+    """Находит первую пустую строку на листе."""
+    result = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheet_id,
+        range=f"'{sheet_name}'!A:A",
+    ).execute()
+    values = result.get("values", [])
+    return len(values) + 1
+
+
+def _format_row_request(
+    sheet_id: int, start_row: int, end_row: int,
+    bold: bool = False, italic: bool = False,
+    bg: tuple = None, fg: tuple = None,
+) -> dict:
+    text_format = {"bold": bold, "italic": italic}
+    if fg:
+        text_format["foregroundColorStyle"] = {
+            "rgbColor": {"red": fg[0], "green": fg[1], "blue": fg[2]}
+        }
+
+    fmt = {"textFormat": text_format}
+    if bg:
+        fmt["backgroundColor"] = {"red": bg[0], "green": bg[1], "blue": bg[2]}
+
+    return {
+        "repeatCell": {
+            "range": {
+                "sheetId": sheet_id,
+                "startRowIndex": start_row,
+                "endRowIndex": end_row,
+            },
+            "cell": {"userEnteredFormat": fmt},
+            "fields": "userEnteredFormat(textFormat,backgroundColor)",
+        }
+    }
+
+
+def _col_width_request(sheet_id: int, col_index: int, width: int) -> dict:
+    return {
+        "updateDimensionProperties": {
+            "range": {
+                "sheetId": sheet_id,
+                "dimension": "COLUMNS",
+                "startIndex": col_index,
+                "endIndex": col_index + 1,
+            },
+            "properties": {"pixelSize": width},
+            "fields": "pixelSize",
+        }
+    }
+
+
+def _number_format_request(
+    sheet_id: int, start_row: int, end_row: int,
+    start_col: int, end_col: int, pattern: str,
+) -> dict:
+    return {
+        "repeatCell": {
+            "range": {
+                "sheetId": sheet_id,
+                "startRowIndex": start_row,
+                "endRowIndex": end_row,
+                "startColumnIndex": start_col,
+                "endColumnIndex": end_col,
+            },
+            "cell": {
+                "userEnteredFormat": {
+                    "numberFormat": {"type": "NUMBER", "pattern": pattern}
+                }
+            },
+            "fields": "userEnteredFormat.numberFormat",
+        }
+    }
+
+
+def _border_style(style: str = "SOLID") -> dict:
+    return {
+        "style": style,
+        "color": {"red": 0.74, "green": 0.76, "blue": 0.78},
+    }

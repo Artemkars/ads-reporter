@@ -1,20 +1,15 @@
 name: Weekly Ads Report
 
 on:
-  # Понедельник и пятница в 09:00 по Алматы (UTC+5) = 04:00 UTC
-  schedule:
-    - cron: '0 4 * * 1'   # Понедельник
-    - cron: '0 4 * * 5'   # Пятница
-
-  # Ручной запуск из GitHub UI с вводом курса и НДС
+  # Ручной запуск из GitHub UI или через API (веб-дашборд)
   workflow_dispatch:
     inputs:
       rate_usd_kzt:
-        description: 'Курс USD/₸ (например: 490)'
+        description: 'Курс USD/₸'
         required: true
         default: '490'
       vat_pct:
-        description: 'НДС + АК % (например: 12)'
+        description: 'НДС + АК %'
         required: true
         default: '12'
       date_from:
@@ -25,12 +20,16 @@ on:
         description: 'Период ДО: YYYY-MM-DD (пусто = последние 7 дней)'
         required: false
         default: ''
+      client:
+        description: 'Кабинет (ключ из config.yaml, например: amk)'
+        required: false
+        default: ''
 
 jobs:
   generate-report:
     name: Generate & Upload Report
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -45,74 +44,32 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # Курс и НДС: при ручном запуске — из inputs, при schedule — из Secrets
-      - name: Set rate and VAT
-        id: params
+      - name: Build CLI args
+        id: args
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "rate=${{ github.event.inputs.rate_usd_kzt }}" >> $GITHUB_OUTPUT
-            echo "vat=${{ github.event.inputs.vat_pct }}" >> $GITHUB_OUTPUT
-            echo "date_from=${{ github.event.inputs.date_from }}" >> $GITHUB_OUTPUT
-            echo "date_to=${{ github.event.inputs.date_to }}" >> $GITHUB_OUTPUT
-          else
-            # При автозапуске курс берётся из секрета REPORT_RATE_USD_KZT
-            echo "rate=${{ secrets.REPORT_RATE_USD_KZT }}" >> $GITHUB_OUTPUT
-            echo "vat=${{ secrets.REPORT_VAT_PCT }}" >> $GITHUB_OUTPUT
-            echo "date_from=" >> $GITHUB_OUTPUT
-            echo "date_to=" >> $GITHUB_OUTPUT
+          ARGS="--rate ${{ github.event.inputs.rate_usd_kzt }} --vat ${{ github.event.inputs.vat_pct }}"
+
+          if [ -n "${{ github.event.inputs.date_from }}" ]; then
+            ARGS="$ARGS --date-from ${{ github.event.inputs.date_from }}"
+          fi
+          if [ -n "${{ github.event.inputs.date_to }}" ]; then
+            ARGS="$ARGS --date-to ${{ github.event.inputs.date_to }}"
+          fi
+          if [ -n "${{ github.event.inputs.client }}" ]; then
+            ARGS="$ARGS --client ${{ github.event.inputs.client }}"
           fi
 
-      - name: Build date range args
-        id: dates
-        run: |
-          DATE_ARGS=""
-          if [ -n "${{ steps.params.outputs.date_from }}" ]; then
-            DATE_ARGS="$DATE_ARGS --date-from ${{ steps.params.outputs.date_from }}"
-          fi
-          if [ -n "${{ steps.params.outputs.date_to }}" ]; then
-            DATE_ARGS="$DATE_ARGS --date-to ${{ steps.params.outputs.date_to }}"
-          fi
-          echo "args=$DATE_ARGS" >> $GITHUB_OUTPUT
+          echo "cli_args=$ARGS" >> $GITHUB_OUTPUT
 
       - name: Run report → Google Sheets
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           AMK_ACT_ID: ${{ secrets.AMK_ACT_ID }}
-          # Добавьте при необходимости:
+          # Добавьте при подключении новых кабинетов:
           # JETQ_ACT_ID: ${{ secrets.JETQ_ACT_ID }}
           # MTZ_ACT_ID: ${{ secrets.MTZ_ACT_ID }}
           # AUDI_ACT_ID: ${{ secrets.AUDI_ACT_ID }}
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
           GOOGLE_SPREADSHEET_ID: ${{ secrets.GOOGLE_SPREADSHEET_ID }}
         run: |
-          python run_report.py \
-            --rate ${{ steps.params.outputs.rate }} \
-            --vat ${{ steps.params.outputs.vat }} \
-            --no-excel \
-            ${{ steps.dates.outputs.args }}
-
-      - name: Upload Excel as artifact (backup)
-        # Сохраняем Excel-файлы как артефакты GitHub на случай если Sheets недоступен
-        # Артефакты хранятся 30 дней
-        if: always()
-        run: |
-          # Перезапускаем с Excel для архива
-          python run_report.py \
-            --rate ${{ steps.params.outputs.rate }} \
-            --vat ${{ steps.params.outputs.vat }} \
-            --no-sheets \
-            ${{ steps.dates.outputs.args }} || true
-        env:
-          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
-          AMK_ACT_ID: ${{ secrets.AMK_ACT_ID }}
-          GOOGLE_CREDENTIALS_JSON: ''
-          GOOGLE_SPREADSHEET_ID: ''
-
-      - name: Upload Excel artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ads-reports-${{ github.run_number }}
-          path: output/*.xlsx
-          retention-days: 30
-          if-no-files-found: warn
+          python run_report.py ${{ steps.args.outputs.cli_args }} --no-excel --sheets-id $GOOGLE_SPREADSHEET_ID
