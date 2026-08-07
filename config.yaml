@@ -1,0 +1,50 @@
+clients:
+  amk:
+    name: "AMK"
+    act_id_env: "AMK_ACT_ID"
+    # Типы действий Meta, которые считаются лидом для этого клиента.
+    #
+    # Лид-форма (GenLead кампании):
+    #   - lead                     → основной тип лид-формы Meta
+    #   - onsite_conversion.lead_grouped → сгруппированные лиды (Meta дедуплицирует)
+    #
+    # WhatsApp (кампании "Лид Ватсап"):
+    #   - onsite_conversion.messaging_first_reply → первое сообщение от пользователя
+    #
+    # ВАЖНО: lead + onsite_conversion.lead_grouped часто дублируют одно событие.
+    # Если итоги задваиваются — оставьте только onsite_conversion.lead_grouped.
+    lead_action_types:
+      - "lead"
+      - "onsite_conversion.lead_grouped"
+      - "onsite_conversion.messaging_first_reply"
+
+  # Раскомментируйте и заполните при добавлении новых клиентов:
+  # jetq:
+  #   name: "JetQ"
+  #   act_id_env: "JETQ_ACT_ID"
+  #   lead_action_types:
+  #     - "lead"
+  #     - "onsite_conversion.lead_grouped"
+  #
+  # mtz:
+  #   name: "MTZ"
+  #   act_id_env: "MTZ_ACT_ID"
+  #   lead_action_types:
+  #     - "lead"
+  #     - "contact"
+  #
+  # audi:
+  #   name: "AUDI"
+  #   act_id_env: "AUDI_ACT_ID"
+  #   lead_action_types:
+  #     - "lead"
+  #     - "contact"
+  #     - "onsite_conversion.lead_grouped"
+
+meta_api:
+  version: "v19.0"
+  base_url: "https://graph.facebook.com"
+  timeout_seconds: 30
+  max_retries: 3
+  retry_delay_seconds: 5
+  campaigns_per_page: 100
