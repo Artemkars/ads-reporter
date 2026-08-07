@@ -20,7 +20,7 @@ class CampaignRow:
     name: str                       # название кампании/группы/объявления
     status: str                     # "ACTIVE" / "PAUSED" / "DELETED" и т.д.
     spend_usd: float                # расход в USD
-    leads: int                      # количество лидов (уже отфильтровано по конфигу)
+    results: int                    # количество результатов (уже отфильтровано по конфигу)
     date_from: date
     date_to: date
     client_id: str                  # ключ клиента из config.yaml (например, "amk")

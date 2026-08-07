@@ -53,8 +53,8 @@ COLUMNS = [
     ("Статус",            14, "center"),
     ("Расход, $",         14, "right"),
     ("Расход, ₸ (с НДС)", 18, "right"),
-    ("Лиды",              10, "center"),
-    ("Цена лида, ₸",      16, "right"),
+    ("Результаты",        10, "center"),
+    ("Цена результата, ₸", 16, "right"),
 ]
 
 
@@ -186,6 +186,7 @@ def _write_campaign_row(
 ) -> int:
     """Пишет одну строку кампании."""
     thin = Side(style="thin", color=COLOR_BORDER)
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
     if row_data.level == "campaign":
         ws.row_dimensions[row].outlineLevel = 0
         bg_color = "E8F0FE" # Light blue
@@ -203,8 +204,8 @@ def _write_campaign_row(
         row_data.status,
         row_data.spend_usd,
         row_data.spend_kzt,
-        row_data.leads,
-        row_data.cost_per_lead,
+        row_data.results,
+        row_data.cost_per_result,
     ]
     aligns = ["left", "center", "right", "right", "center", "right"]
     formats = [None, None, '#,##0.00', '#,##0.00 ₸', '0', '#,##0.00 ₸']
@@ -240,8 +241,8 @@ def _write_total_row(ws, total: ReportRow, row: int) -> None:
         "",
         total.spend_usd,
         total.spend_kzt,
-        total.leads,
-        total.cost_per_lead,
+        total.results,
+        total.cost_per_result,
     ]
     aligns = ["left", "center", "right", "right", "center", "right"]
     formats = [None, None, '#,##0.00', '#,##0.00 ₸', '0', '#,##0.00 ₸']
@@ -271,9 +272,9 @@ def _write_footer(
     footer_cell = ws.cell(row=row, column=1)
     footer_cell.value = (
         f"Сформировано: {generated_at}  |  "
-        f"Кампаний в отчёте: {len(client_report.rows)}  |  "
+        f"Строк данных: {len(client_report.rows)}  |  "
         f"Расход итого: {client_report.total.spend_kzt:,.0f} ₸  |  "
-        f"Лидов итого: {client_report.total.leads}"
+        f"Результатов итого: {client_report.total.results}"
     )
     footer_cell.font = Font(name="Calibri", size=9, italic=True, color="95A5A6")
     _merge(ws, row, 1, row, num_cols)

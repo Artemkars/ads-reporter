@@ -42,8 +42,8 @@ REPORT_HEADERS = [
     "Название (Кампания / Группа / Объявление)",
     "Расход USD",
     "Расход ₸",
-    "Лиды",
-    "Цена лида",
+    "Результаты",
+    "Цена результата",
     "Статус",
 ]
 
@@ -253,8 +253,8 @@ def _build_report_block(client_report: ClientReport) -> list[list]:
                 row.name,
                 row.spend_usd,
                 row.spend_kzt,
-                row.leads,
-                row.cost_per_lead if row.cost_per_lead else 0,
+                row.results,
+                row.cost_per_result if row.cost_per_result else 0,
                 row.status,
             ])
 
@@ -264,8 +264,8 @@ def _build_report_block(client_report: ClientReport) -> list[list]:
         "ИТОГО",
         t.spend_usd,
         t.spend_kzt,
-        t.leads,
-        t.cost_per_lead if t.cost_per_lead else 0,
+        t.results,
+        t.cost_per_result if t.cost_per_result else 0,
         "",
     ])
 

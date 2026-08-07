@@ -21,7 +21,7 @@ from .base import DataSource, CampaignRow
 
 logger = logging.getLogger(__name__)
 
-INSIGHTS_FIELDS = "campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,actions,date_start,date_stop"
+INSIGHTS_FIELDS = "campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,actions,objective,reach,clicks,date_start,date_stop"
 
 class MetaAdsSource(DataSource):
     """Реализация DataSource для Meta Marketing API с поддержкой иерархии."""
@@ -81,16 +81,15 @@ class MetaAdsSource(DataSource):
         statuses = self._fetch_all_statuses(act_id)
 
         # Построение дерева
-        # tree[campaign_id] = { name, spend, leads, status, adsets: { adset_id: { ... ads: { ad_id: {...} } } } }
         
         def new_ad_node():
-            return {"name": "", "spend": 0.0, "leads": 0, "status": "UNKNOWN"}
+            return {"name": "", "spend": 0.0, "results": 0, "status": "UNKNOWN"}
             
         def new_adset_node():
-            return {"name": "", "spend": 0.0, "leads": 0, "status": "UNKNOWN", "ads": defaultdict(new_ad_node)}
+            return {"name": "", "spend": 0.0, "results": 0, "status": "UNKNOWN", "ads": defaultdict(new_ad_node)}
             
         def new_camp_node():
-            return {"name": "", "spend": 0.0, "leads": 0, "status": "UNKNOWN", "adsets": defaultdict(new_adset_node)}
+            return {"name": "", "spend": 0.0, "results": 0, "status": "UNKNOWN", "adsets": defaultdict(new_adset_node)}
 
         tree = defaultdict(new_camp_node)
         
@@ -108,16 +107,28 @@ class MetaAdsSource(DataSource):
                 continue
                 
             spend = float(insight.get("spend", 0) or 0)
+            actions = insight.get("actions", [])
+            objective = insight.get("objective", "")
+            results = 0
             
-            # Подсчет лидов
-            leads = 0
-            for action in insight.get("actions", []):
-                atype = action.get("action_type", "")
-                if atype in lead_action_types:
-                    leads += int(action.get("value", 0) or 0)
+            if objective in ("OUTCOME_LEADS", "LEAD_GENERATION", "CONVERSIONS", "OUTCOME_SALES"):
+                for act in actions:
+                    if act.get("action_type") in lead_action_types:
+                        results += int(act.get("value", 0))
+            elif objective in ("OUTCOME_TRAFFIC", "LINK_CLICKS"):
+                results = int(insight.get("clicks", 0))
+            elif objective in ("OUTCOME_AWARENESS", "REACH", "BRAND_AWARENESS"):
+                results = int(insight.get("reach", 0))
+            elif objective in ("OUTCOME_ENGAGEMENT", "POST_ENGAGEMENT"):
+                eng = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") == "post_engagement")
+                results = eng if eng > 0 else int(insight.get("clicks", 0))
+            else:
+                for act in actions:
+                    if act.get("action_type") in lead_action_types:
+                        results += int(act.get("value", 0) or 0)
                     
-            # Если нет ни расходов, ни лидов - пропускаем (обычно Insights API и так не отдаст, но на всякий случай)
-            if spend == 0 and leads == 0:
+            # Если нет ни расходов, ни результатов - пропускаем
+            if spend == 0 and results == 0:
                 continue
 
             try:
@@ -132,22 +143,25 @@ class MetaAdsSource(DataSource):
             camp_node = tree[c_id]
             camp_node["name"] = insight.get("campaign_name", "Без названия")
             camp_node["status"] = statuses.get(c_id, "UNKNOWN")
-            camp_node["spend"] += spend
-            camp_node["leads"] += leads
             
             # Обновляем Группу
             adset_node = camp_node["adsets"][a_id]
             adset_node["name"] = insight.get("adset_name", "Без названия")
             adset_node["status"] = statuses.get(a_id, "UNKNOWN")
             adset_node["spend"] += spend
-            adset_node["leads"] += leads
+            adset_node["results"] += results
             
             # Обновляем Объявление
             ad_node = adset_node["ads"][ad_id]
             ad_node["name"] = insight.get("ad_name", "Без названия")
             ad_node["status"] = statuses.get(ad_id, "UNKNOWN")
             ad_node["spend"] += spend
-            ad_node["leads"] += leads
+            ad_node["results"] += results
+        
+        # Пересчет итогов для кампаний
+        for c_id, c_data in tree.items():
+            c_data["spend"] = sum(a["spend"] for a in c_data["adsets"].values())
+            c_data["results"] = sum(a["results"] for a in c_data["adsets"].values())
             
         if min_date > max_date:
             min_date = date_from or (date.today() - timedelta(days=7))
@@ -156,15 +170,12 @@ class MetaAdsSource(DataSource):
         # Разворачиваем в плоский список
         rows = []
         for c_id, c_data in tree.items():
-            if c_data["spend"] == 0 and c_data["leads"] == 0:
-                continue
-                
             rows.append(CampaignRow(
                 level="campaign",
                 name=c_data["name"],
                 status=c_data["status"],
                 spend_usd=c_data["spend"],
-                leads=c_data["leads"],
+                results=c_data["results"],
                 date_from=min_date,
                 date_to=max_date,
                 client_id=client_id,
@@ -176,7 +187,7 @@ class MetaAdsSource(DataSource):
                     name=a_data["name"],
                     status=a_data["status"],
                     spend_usd=a_data["spend"],
-                    leads=a_data["leads"],
+                    results=a_data["results"],
                     date_from=min_date,
                     date_to=max_date,
                     client_id=client_id,
@@ -188,7 +199,7 @@ class MetaAdsSource(DataSource):
                         name=ad_data["name"],
                         status=ad_data["status"],
                         spend_usd=ad_data["spend"],
-                        leads=ad_data["leads"],
+                        results=ad_data["results"],
                         date_from=min_date,
                         date_to=max_date,
                         client_id=client_id,

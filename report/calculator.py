@@ -23,8 +23,8 @@ class ReportRow:
     status: str
     spend_usd: float
     spend_kzt: float         # spend_usd * rate * (1 + vat_pct/100)
-    leads: int
-    cost_per_lead: float     # spend_kzt / leads (0 если leads == 0)
+    results: int
+    cost_per_result: float   # spend_kzt / results (0 если results == 0)
     level: str = "campaign"  # 'campaign', 'adset', 'ad'
     is_total: bool = False   # True для итоговой строки блока
 
@@ -70,15 +70,15 @@ def calculate_report(
     rows: list[ReportRow] = []
     for camp in campaigns:
         spend_kzt = round(camp.spend_usd * multiplier, 2)
-        cost_per_lead = round(spend_kzt / camp.leads, 2) if camp.leads > 0 else 0.0
+        cost_per_result = round(spend_kzt / camp.results, 2) if camp.results > 0 else 0.0
 
         rows.append(ReportRow(
             name=camp.name,
             status=_format_status(camp.status),
             spend_usd=round(camp.spend_usd, 2),
             spend_kzt=spend_kzt,
-            leads=camp.leads,
-            cost_per_lead=cost_per_lead,
+            results=camp.results,
+            cost_per_result=cost_per_result,
             level=camp.level,
         ))
 
@@ -86,9 +86,9 @@ def calculate_report(
     campaign_rows = [r for r in rows if r.level == 'campaign']
     total_spend_usd = round(sum(r.spend_usd for r in campaign_rows), 2)
     total_spend_kzt = round(sum(r.spend_kzt for r in campaign_rows), 2)
-    total_leads = sum(r.leads for r in campaign_rows)
-    avg_cost_per_lead = (
-        round(total_spend_kzt / total_leads, 2) if total_leads > 0 else 0.0
+    total_results = sum(r.results for r in campaign_rows)
+    avg_cost_per_result = (
+        round(total_spend_kzt / total_results, 2) if total_results > 0 else 0.0
     )
 
     total = ReportRow(
@@ -96,8 +96,8 @@ def calculate_report(
         status="",
         spend_usd=total_spend_usd,
         spend_kzt=total_spend_kzt,
-        leads=total_leads,
-        cost_per_lead=avg_cost_per_lead,
+        results=total_results,
+        cost_per_result=avg_cost_per_result,
         level="total",
         is_total=True,
     )
