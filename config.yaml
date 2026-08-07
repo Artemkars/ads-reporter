@@ -6,6 +6,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '3601892984'
   cadillac_qazaqstan_ads:
     name: Cadillac Qazaqstan ADS
     act_id: act_921465523570954
@@ -20,6 +21,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '1976419052'
   innovatex:
     name: InnovateX
     act_id: act_1448896328939955
@@ -27,6 +29,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '6070173050'
   amkz_jetour_ekibastuz:
     name: AMKZ_Jetour_Ekibastuz
     act_id: act_1561318098348453
@@ -34,6 +37,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '2326620539'
   amkz_changan_pavlodar:
     name: AMKZ_Changan_Pavlodar
     act_id: act_1789548078344731
@@ -41,6 +45,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '4987211819'
   amkz_jetq_daagency:
     name: AMKZ_JetQ/Daagency
     act_id: act_1499261374602215
@@ -48,6 +53,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '7003396133'
   amkz_chery_pavlodar:
     name: AMKZ_Chery_Pavlodar
     act_id: act_1841381649802821
@@ -55,6 +61,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '1024049586'
   amkz_canon:
     name: AMKZ_Canon
     act_id: act_1386629536226419
@@ -76,6 +83,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '4393986148'
   amkz_tank_aktau:
     name: AMKZ_Tank_Aktau
     act_id: act_1189393596031096
@@ -97,6 +105,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '6635131791'
   amkz_kia_aktau:
     name: AMKZ_KIA_Aktau
     act_id: act_2048080829422446
@@ -139,6 +148,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '8668130535'
   amkz_jetq_astana:
     name: AMKZ_JetQ Astana
     act_id: act_2870993986567599
@@ -153,6 +163,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '1257638394'
   amkz_toyota_aktau:
     name: AMKZ_Toyota_Aktau
     act_id: act_1461646398505596
@@ -160,6 +171,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '2189617772'
   amkz_changan_karaganda:
     name: AMKZ_Changan_Karaganda
     act_id: act_3143365589186571
@@ -167,6 +179,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '5221406790'
   amkz_geely_astana:
     name: AMKZ_Geely_Astana
     act_id: act_1515002436462007
@@ -174,6 +187,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '4502732103'
   amkz_lexus_aktau:
     name: AMKZ_Lexus_Aktau
     act_id: act_943354138604291
@@ -181,6 +195,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '9560369672'
   amkz_geely_kostanay:
     name: AMKZ_Geely_Kostanay
     act_id: act_1569970754784741
@@ -188,6 +203,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '7161742137'
   amkz_geely_karaganda:
     name: AMKZ_Geely_Karaganda
     act_id: act_1035642672667694
@@ -195,6 +211,7 @@ clients:
     - lead
     - onsite_conversion.lead_grouped
     - onsite_conversion.messaging_first_reply
+    google_customer_id: '5520370147'
   unknown_120996931604569:
     name: Антонович Дизайн Контекст
     act_id: act_120996931604569

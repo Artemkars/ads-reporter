@@ -34,7 +34,7 @@ class GoogleAdsSource(DataSource):
             "use_proto_plus": True
         }
         try:
-            self.client = GoogleAdsClient.load_from_dict(credentials, version="v17")
+            self.client = GoogleAdsClient.load_from_dict(credentials)
             self.ga_service = self.client.get_service("GoogleAdsService")
         except Exception as e:
             logger.error("Ошибка инициализации Google Ads Client: %s", e)
