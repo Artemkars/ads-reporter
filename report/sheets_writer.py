@@ -40,11 +40,11 @@ PANEL_HEADERS = [
 # Заголовки таблицы отчёта
 REPORT_HEADERS = [
     "Кампания",
-    "Статус",
     "Расход, $",
     "Расход, ₸ (с НДС)",
     "Лиды",
     "Цена лида, ₸",
+    "Статус",
 ]
 
 
@@ -185,7 +185,7 @@ def write_report_block(
     Returns:
         URL таблицы.
     """
-    sheet_name = client_report.client_name
+    sheet_name = f"{client_report.client_name} {client_report.date_label}"
 
     # Создаём лист если не существует
     if not _sheet_exists(service, spreadsheet_id, sheet_name):
@@ -248,22 +248,22 @@ def _build_report_block(client_report: ClientReport) -> list[list]:
     for row in client_report.rows:
         rows.append([
             row.campaign_name,
-            row.status,
             row.spend_usd,
             row.spend_kzt,
             row.leads,
             row.cost_per_lead if row.cost_per_lead else 0,
+            row.status,
         ])
 
     # Итоговая строка
     t = client_report.total
     rows.append([
         "ИТОГО",
-        "",
         t.spend_usd,
         t.spend_kzt,
         t.leads,
         t.cost_per_lead if t.cost_per_lead else 0,
+        "",
     ])
 
     # Пустая строка-разделитель
@@ -291,9 +291,9 @@ def _format_report_block(
     total_row = data_start + data_rows_count  # ИТОГО
 
     requests = [
-        # Шапка периода — голубой фон, жирный
+        # Шапка периода — голубой фон, жирный, крупный шрифт
         _format_row_request(sheet_id, header_row, header_row + 1,
-                            bold=True, bg=(0.82, 0.88, 0.95), fg=(0.12, 0.22, 0.39)),
+                            bold=True, bg=(0.82, 0.88, 0.95), fg=(0.12, 0.22, 0.39), font_size=14),
         # Заголовки колонок — тёмно-синий
         _format_row_request(sheet_id, cols_row, cols_row + 1,
                             bold=True, bg=(0.12, 0.22, 0.39), fg=(1, 1, 1)),
@@ -318,11 +318,14 @@ def _format_report_block(
                 "innerVertical": _border_style(style="DOTTED"),
             }
         },
-        # Числовой формат для столбцов C-D (расходы) и F (цена лида)
-        _number_format_request(sheet_id, data_start, total_row + 1, 2, 3, "#,##0.00"),
-        _number_format_request(sheet_id, data_start, total_row + 1, 3, 4, "#,##0 ₸"),
-        _number_format_request(sheet_id, data_start, total_row + 1, 5, 6, "#,##0 ₸"),
+        # Числовой формат для столбцов B-C (расходы) и E (цена лида)
+        _number_format_request(sheet_id, data_start, total_row + 1, 1, 2, "#,##0.00"),
+        _number_format_request(sheet_id, data_start, total_row + 1, 2, 3, "#,##0 ₸"),
+        _number_format_request(sheet_id, data_start, total_row + 1, 4, 5, "#,##0 ₸"),
     ]
+
+    # Добавляем условное форматирование статусов
+    requests.extend(_conditional_format_status(sheet_id, data_start, total_row))
 
     try:
         service.spreadsheets().batchUpdate(
@@ -337,11 +340,11 @@ def _auto_col_widths(service, spreadsheet_id: str, sheet_id: int) -> None:
     """Задаёт фиксированную ширину столбцов отчёта."""
     requests = [
         _col_width_request(sheet_id, 0, 420),   # Кампания
-        _col_width_request(sheet_id, 1, 120),   # Статус
-        _col_width_request(sheet_id, 2, 110),   # Расход $
-        _col_width_request(sheet_id, 3, 150),   # Расход ₸
-        _col_width_request(sheet_id, 4, 80),    # Лиды
-        _col_width_request(sheet_id, 5, 130),   # Цена лида
+        _col_width_request(sheet_id, 1, 110),   # Расход $
+        _col_width_request(sheet_id, 2, 150),   # Расход ₸
+        _col_width_request(sheet_id, 3, 80),    # Лиды
+        _col_width_request(sheet_id, 4, 130),   # Цена лида
+        _col_width_request(sheet_id, 5, 120),   # Статус
     ]
     try:
         service.spreadsheets().batchUpdate(
@@ -399,9 +402,9 @@ def _get_next_empty_row(service, spreadsheet_id: str, sheet_name: str) -> int:
 def _format_row_request(
     sheet_id: int, start_row: int, end_row: int,
     bold: bool = False, italic: bool = False,
-    bg: tuple = None, fg: tuple = None,
+    bg: tuple = None, fg: tuple = None, font_size: int = 10,
 ) -> dict:
-    text_format = {"bold": bold, "italic": italic}
+    text_format = {"bold": bold, "italic": italic, "fontSize": font_size}
     if fg:
         text_format["foregroundColorStyle"] = {
             "rgbColor": {"red": fg[0], "green": fg[1], "blue": fg[2]}
@@ -467,3 +470,35 @@ def _border_style(style: str = "SOLID") -> dict:
         "style": style,
         "color": {"red": 0.74, "green": 0.76, "blue": 0.78},
     }
+
+def _conditional_format_status(sheet_id: int, start_row: int, end_row: int) -> list[dict]:
+    def rule(condition_type: str, condition_values: list[str], bg: tuple, fg: tuple):
+        return {
+            "addConditionalFormatRule": {
+                "rule": {
+                    "ranges": [{
+                        "sheetId": sheet_id,
+                        "startRowIndex": start_row,
+                        "endRowIndex": end_row,
+                        "startColumnIndex": 5,
+                        "endColumnIndex": 6,
+                    }],
+                    "booleanRule": {
+                        "condition": {
+                            "type": condition_type,
+                            "values": [{"userEnteredValue": v} for v in condition_values]
+                        },
+                        "format": {
+                            "backgroundColor": {"red": bg[0], "green": bg[1], "blue": bg[2]},
+                            "textFormat": {"foregroundColor": {"red": fg[0], "green": fg[1], "blue": fg[2]}, "bold": True}
+                        }
+                    }
+                },
+                "index": 0
+            }
+        }
+    return [
+        rule("TEXT_EQ", ["Активна"], (0.85, 0.93, 0.83), (0.1, 0.5, 0.1)),
+        rule("TEXT_EQ", ["Остановлена"], (0.9, 0.9, 0.9), (0.4, 0.4, 0.4)),
+        rule("TEXT_EQ", ["Отключена"], (0.9, 0.9, 0.9), (0.4, 0.4, 0.4)),
+    ]
