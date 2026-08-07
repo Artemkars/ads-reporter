@@ -286,11 +286,7 @@ def main() -> None:
             )
 
             if not campaigns:
-                log.warning(
-                    "[%s] Нет данных за указанный период — файл не создан.", client_name
-                )
-                results["empty"].append(client_name)
-                continue
+                log.warning("[%s] Нет данных за период %s - %s", client_name, date_from_dt.strftime('%Y-%m-%d'), date_to_dt.strftime('%Y-%m-%d'))
 
             # 2. Расчет показателей
             client_report = calculate_report(
@@ -299,12 +295,11 @@ def main() -> None:
                 campaigns=campaigns,
                 rate_usd_kzt=rate,
                 vat_pct=vat,
+                date_from=date_from_dt.strftime('%d.%m.%Y'),
+                date_to=date_to_dt.strftime('%d.%m.%Y'),
             )
 
-            if client_report is None:
-                log.warning("[%s] Отчет не сформирован (нет данных).", client_name)
-                results["empty"].append(client_name)
-                continue
+
 
             # 3a. Excel (если не отключен флагом --no-excel)
             if not args.no_excel:

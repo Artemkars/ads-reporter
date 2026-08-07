@@ -209,8 +209,9 @@ def write_report_block(
 
     # Форматирование блока
     sheet_id = _get_sheet_id(service, spreadsheet_id, sheet_name)
+    data_rows_count = max(1, len(client_report.rows))
     _format_report_block(service, spreadsheet_id, sheet_id,
-                         next_row, len(client_report.rows))
+                         next_row, data_rows_count)
 
     # Автоширина колонок
     _auto_col_widths(service, spreadsheet_id, sheet_id)
@@ -245,15 +246,18 @@ def _build_report_block(client_report: ClientReport) -> list[list]:
     rows.append(REPORT_HEADERS)
 
     # Строки данных
-    for row in client_report.rows:
-        rows.append([
-            row.campaign_name,
-            row.spend_usd,
-            row.spend_kzt,
-            row.leads,
-            row.cost_per_lead if row.cost_per_lead else 0,
-            row.status,
-        ])
+    if not client_report.rows:
+        rows.append(["Нет данных за указанный период", "", "", "", "", ""])
+    else:
+        for row in client_report.rows:
+            rows.append([
+                row.campaign_name,
+                row.spend_usd,
+                row.spend_kzt,
+                row.leads,
+                row.cost_per_lead if row.cost_per_lead else 0,
+                row.status,
+            ])
 
     # Итоговая строка
     t = client_report.total

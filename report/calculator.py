@@ -46,7 +46,9 @@ def calculate_report(
     campaigns: list[CampaignRow],
     rate_usd_kzt: float,
     vat_pct: float,
-) -> Optional[ClientReport]:
+    date_from: str = None,
+    date_to: str = None,
+) -> ClientReport:
     """
     Рассчитывает финансовые показатели по всем кампаниям клиента.
 
@@ -57,12 +59,11 @@ def calculate_report(
         rate_usd_kzt: курс USD/₸ на неделю (задаётся пользователем)
         vat_pct: процент НДС + АК (например, 12.0)
 
-    Returns:
-        ClientReport или None если список кампаний пустой.
-    """
-    if not campaigns:
-        return None
+        date_from, date_to: Строки дат для заголовка.
 
+    Returns:
+        ClientReport с данными (или пустым списком строк, если нет кампаний).
+    """
     multiplier = rate_usd_kzt * (1 + vat_pct / 100)
 
     rows: list[ReportRow] = []
@@ -97,9 +98,8 @@ def calculate_report(
         is_total=True,
     )
 
-    # Формируем метку периода из первой кампании
-    first = campaigns[0]
-    date_label = f"{first.date_from.strftime('%d.%m.%Y')} – {first.date_to.strftime('%d.%m.%Y')}"
+    # Формируем метку периода
+    date_label = f"{date_from} – {date_to}" if date_from and date_to else "За всё время"
 
     return ClientReport(
         client_id=client_id,
