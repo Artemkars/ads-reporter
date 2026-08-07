@@ -127,5 +127,12 @@ def _format_status(status: str) -> str:
         "DELETED": "Удалена",
         "ARCHIVED": "В архиве",
         "DISABLED": "Отключена",
+        "CAMPAIGN_PAUSED": "Остановлена (Кампания)",
+        "ADSET_PAUSED": "Остановлена (Группа)",
+        "PENDING_REVIEW": "На модерации",
+        "DISAPPROVED": "Отклонена",
+        "WITH_ISSUES": "С ошибками",
+        "IN_PROCESS": "В обработке",
+        "PREAPPROVED": "Одобрена",
     }
     return mapping.get(status.upper(), status)
