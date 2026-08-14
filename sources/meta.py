@@ -71,7 +71,10 @@ class MetaAdsSource(DataSource):
                 insights = self._fetch_ad_insights(camp_id, date_from, date_to)
                 raw_insights.extend(insights)
         except Exception as exc:
-            logger.error("[%s] Критическая ошибка API Meta: %s", client_id.upper(), exc)
+            if hasattr(exc, "response") and exc.response is not None:
+                logger.error("[%s] Критическая ошибка API Meta: %s\nBODY: %s", client_id.upper(), exc, exc.response.text)
+            else:
+                logger.error("[%s] Критическая ошибка API Meta: %s", client_id.upper(), exc)
             return []
 
         if not raw_insights:
