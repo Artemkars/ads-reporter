@@ -602,7 +602,7 @@
               vat_pct: totalVat.toString(),
               date_from: dateFrom || '',
               date_to: dateTo || '',
-              client: client,
+              client: client === 'all' ? '' : client
             },
           }),
         }
