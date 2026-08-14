@@ -108,7 +108,7 @@ def calculate_report(
     )
 
     # Формируем метку периода
-    date_label = f"{date_from} – {date_to}" if date_from and date_to else "За всё время"
+    date_label = f"{date_from} – {date_to}" if date_from and date_to else "Последние 7 дней"
 
     return ClientReport(
         client_id=client_id,
