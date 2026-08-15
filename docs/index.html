@@ -656,7 +656,7 @@
         setTimeout(() => checkWorkflowStatus(owner, repo, token, sheetsUrl), 10000);
       } else {
         showStatus('success', '✓',
-          `Готово! Откройте <a href="${sheetsUrl}" target="_blank">Google Sheets</a> — данные на месте.`
+          `Отчёт сформирован! Данные появятся в <a href="${sheetsUrl}" target="_blank">Google Sheets</a> в течение ~1 мин.`
         );
       }
     } catch {
