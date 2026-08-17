@@ -132,7 +132,8 @@ class MetaAdsSource(DataSource):
                 if msg_actions > 0:
                     results = msg_actions
                 else:
-                    results = eng_actions if eng_actions > 0 else int(insight.get("clicks", 0))
+                    reach = int(insight.get("reach", 0))
+                    results = 0
             else:
                 if lead_actions > 0:
                     results = lead_actions
@@ -157,8 +158,9 @@ class MetaAdsSource(DataSource):
             camp_node = tree[c_id]
             camp_node["name"] = insight.get("campaign_name", "Без названия")
             camp_node["status"] = statuses.get(c_id, "UNKNOWN")
-            camp_node["is_lead_campaign"] = objective in ("OUTCOME_LEADS", "LEAD_GENERATION", "CONVERSIONS", "OUTCOME_SALES", "MESSAGES", "MESSAGING")
-            camp_node["is_awareness_campaign"] = objective in ("OUTCOME_AWARENESS", "REACH", "BRAND_AWARENESS")
+            camp_node["objective"] = objective
+            if msg_actions > 0:
+                camp_node["has_messages"] = True
             
             # Обновляем Группу
             adset_node = camp_node["adsets"][a_id]
@@ -189,6 +191,12 @@ class MetaAdsSource(DataSource):
         # Разворачиваем в плоский список
         rows = []
         for c_id, c_data in tree.items():
+            obj = c_data.get("objective", "")
+            has_msg = c_data.get("has_messages", False)
+            
+            is_lead = obj in ("OUTCOME_LEADS", "LEAD_GENERATION", "CONVERSIONS", "OUTCOME_SALES", "MESSAGES", "MESSAGING") or (obj in ("OUTCOME_ENGAGEMENT", "POST_ENGAGEMENT") and has_msg)
+            is_aw = obj in ("OUTCOME_AWARENESS", "REACH", "BRAND_AWARENESS") or (obj in ("OUTCOME_ENGAGEMENT", "POST_ENGAGEMENT") and not has_msg)
+            
             rows.append(CampaignRow(
                 level="campaign",
                 name=c_data["name"],
@@ -198,9 +206,9 @@ class MetaAdsSource(DataSource):
                 date_from=min_date,
                 date_to=max_date,
                 client_id=client_id,
-                is_lead_campaign=c_data.get("is_lead_campaign", False),
+                is_lead_campaign=is_lead,
                 reach=c_data["reach"],
-                is_awareness_campaign=c_data.get("is_awareness_campaign", False)
+                is_awareness_campaign=is_aw
             ))
             
             for a_id, a_data in c_data["adsets"].items():
@@ -213,9 +221,9 @@ class MetaAdsSource(DataSource):
                     date_from=min_date,
                     date_to=max_date,
                     client_id=client_id,
-                    is_lead_campaign=c_data.get("is_lead_campaign", False),
+                    is_lead_campaign=is_lead,
                     reach=a_data["reach"],
-                    is_awareness_campaign=c_data.get("is_awareness_campaign", False)
+                    is_awareness_campaign=is_aw
                 ))
                 
                 for ad_id, ad_data in a_data["ads"].items():
@@ -228,9 +236,9 @@ class MetaAdsSource(DataSource):
                         date_from=min_date,
                         date_to=max_date,
                         client_id=client_id,
-                        is_lead_campaign=c_data.get("is_lead_campaign", False),
+                        is_lead_campaign=is_lead,
                         reach=ad_data["reach"],
-                        is_awareness_campaign=c_data.get("is_awareness_campaign", False)
+                        is_awareness_campaign=is_aw
                     ))
 
         logger.info(
