@@ -44,6 +44,7 @@ REPORT_HEADERS = [
     "Расход ₸",
     "Результаты",
     "Цена результата",
+    "Охваты",
     "Статус",
 ]
 
@@ -255,6 +256,7 @@ def _build_report_block(client_report: ClientReport) -> list[list]:
                 row.spend_kzt,
                 row.results,
                 row.cost_per_result if row.cost_per_result else 0,
+                row.reach if row.reach else "",
                 row.status,
             ])
 
@@ -266,6 +268,7 @@ def _build_report_block(client_report: ClientReport) -> list[list]:
         t.spend_kzt,
         t.results,
         t.cost_per_result if t.cost_per_result else 0,
+        t.reach if t.reach else "",
         "",
     ])
 
@@ -292,6 +295,7 @@ def write_grand_summary_block(
     total_spend_kzt = 0.0
     total_spend_usd = 0.0
     total_leads = 0
+    total_reach = 0
     
     for report in reports:
         total_spend_usd += report.total.spend_usd
@@ -300,15 +304,18 @@ def write_grand_summary_block(
         # Считаем лиды ТОЛЬКО из кампаний, нацеленных на лиды (на уровне кампании)
         if report.original_campaigns:
             for camp in report.original_campaigns:
-                if camp.level == 'campaign' and camp.is_lead_campaign:
-                    total_leads += camp.results
+                if camp.level == 'campaign':
+                    if camp.is_lead_campaign:
+                        total_leads += camp.results
+                    if camp.is_awareness_campaign:
+                        total_reach += camp.reach
                     
     avg_cost = round(total_spend_kzt / total_leads, 2) if total_leads > 0 else 0.0
     
     rows = [
         ["ОБЩАЯ СВОДКА (Meta + Google + TikTok)"],
-        ["Общий расход $", "Общий расход ₸", "Всего лидов", "Ср. цена лида"],
-        [round(total_spend_usd, 2), round(total_spend_kzt, 2), total_leads, avg_cost],
+        ["Общий расход $", "Общий расход ₸", "Всего лидов", "Ср. цена лида", "Всего охватов"],
+        [round(total_spend_usd, 2), round(total_spend_kzt, 2), total_leads, avg_cost, total_reach],
     ]
     
     start_cell = f"'{sheet_name}'!A{next_row}"

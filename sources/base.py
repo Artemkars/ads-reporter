@@ -27,6 +27,8 @@ class CampaignRow:
     source: str = "meta"            # метка источника для логов и будущих расширений
     level: str = "campaign"         # уровень: 'campaign', 'adset', 'ad'
     is_lead_campaign: bool = False  # Флаг для общей таблицы (учитываем лиды только отсюда)
+    reach: int = 0
+    is_awareness_campaign: bool = False
     raw_actions: dict = field(default_factory=dict)  # все action_type → value (для отладки)
 
 

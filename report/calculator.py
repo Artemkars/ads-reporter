@@ -28,6 +28,8 @@ class ReportRow:
     level: str = "campaign"  # 'campaign', 'adset', 'ad'
     is_total: bool = False   # True для итоговой строки блока
     is_lead_campaign: bool = False
+    reach: int = 0
+    is_awareness_campaign: bool = False
 
 
 @dataclass
@@ -84,7 +86,9 @@ def calculate_report(
             results=camp.results,
             cost_per_result=cost_per_result,
             level=camp.level,
-            is_lead_campaign=camp.is_lead_campaign
+            is_lead_campaign=camp.is_lead_campaign,
+            reach=camp.reach,
+            is_awareness_campaign=camp.is_awareness_campaign
         ))
 
     # Итоговая строка (считаем только по уровню campaign, чтобы не дублировать)
@@ -92,6 +96,7 @@ def calculate_report(
     total_spend_usd = round(sum(r.spend_usd for r in campaign_rows), 2)
     total_spend_kzt = round(sum(r.spend_kzt for r in campaign_rows), 2)
     total_results = sum(r.results for r in campaign_rows)
+    total_reach = sum(r.reach for r in campaign_rows if r.is_awareness_campaign)
     avg_cost_per_result = (
         round(total_spend_kzt / total_results, 2) if total_results > 0 else 0.0
     )
@@ -105,6 +110,7 @@ def calculate_report(
         cost_per_result=avg_cost_per_result,
         level="total",
         is_total=True,
+        reach=total_reach
     )
 
     # Формируем метку периода

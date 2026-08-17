@@ -5,7 +5,6 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '3601892984'
   cadillac_qazaqstan_ads:
     name: Cadillac Qazaqstan ADS
@@ -13,14 +12,12 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
   amkz_mtz_virazh:
     name: AMKZ_MTZ_Virazh
     act_id: act_849607084339047
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '1976419052'
   innovatex:
     name: InnovateX
@@ -28,7 +25,6 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '6070173050'
   amkz_jetour_ekibastuz:
     name: AMKZ_Jetour_Ekibastuz
@@ -36,7 +32,6 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '2326620539'
   amkz_changan_pavlodar:
     name: AMKZ_Changan_Pavlodar
@@ -44,7 +39,6 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '4987211819'
   amkz_jetq_daagency:
     name: AMKZ_JetQ/Daagency
@@ -52,7 +46,6 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '7003396133'
   amkz_chery_pavlodar:
     name: AMKZ_Chery_Pavlodar
@@ -60,7 +53,6 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '1024049586'
   amkz_canon:
     name: AMKZ_Canon
@@ -68,21 +60,18 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
   amkz_haval_aktau:
     name: AMKZ_Haval_Aktau
     act_id: act_1925912145007648
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
   amkz_chevrolet_ekibastuz:
     name: AMKZ_Chevrolet_Ekibastuz
     act_id: act_1404420594684720
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '4393986148'
   amkz_tank_aktau:
     name: AMKZ_Tank_Aktau
@@ -90,21 +79,18 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
   amkz_jack_ekibastuz:
     name: AMKZ_Jack_Ekibastuz
     act_id: act_1480178203840836
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
   amkz_kia_ekibastuz:
     name: AMKZ_Kia_Ekibastuz
     act_id: act_1569759977560277
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '6635131791'
   amkz_kia_aktau:
     name: AMKZ_KIA_Aktau
@@ -112,42 +98,36 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
   amkz_da_autotrade:
     name: AMKZ_da_AutoTrade
     act_id: act_890824327218188
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
   amk:
     name: AMK
     act_id: act_1202497118763581
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
   amkz_changan_aktau:
     name: AMKZ_Changan_Aktau
     act_id: act_1451761906538097
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
   amkz_la_oil_kazakhstan:
     name: AMKZ_La_Oil_Kazakhstan
     act_id: act_1661050368502356
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
   amkz_cadillac_kazakhstan:
     name: AMKZ_Cadillac_Kazakhstan
     act_id: act_4446485905668216
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '8668130535'
   amkz_jetq_astana:
     name: AMKZ_JetQ Astana
@@ -155,14 +135,12 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
   amkz_audi_astana:
     name: AMKZ_Audi_Astana
     act_id: act_1376683761189514
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '1257638394'
   amkz_toyota_aktau:
     name: AMKZ_Toyota_Aktau
@@ -170,7 +148,6 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '2189617772'
   amkz_changan_karaganda:
     name: AMKZ_Changan_Karaganda
@@ -178,7 +155,6 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '5221406790'
   amkz_geely_astana:
     name: AMKZ_Geely_Astana
@@ -186,7 +162,6 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '4502732103'
   amkz_lexus_aktau:
     name: AMKZ_Lexus_Aktau
@@ -194,7 +169,6 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '9560369672'
   amkz_geely_kostanay:
     name: AMKZ_Geely_Kostanay
@@ -202,7 +176,6 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '7161742137'
   amkz_geely_karaganda:
     name: AMKZ_Geely_Karaganda
@@ -210,7 +183,6 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
     google_customer_id: '5520370147'
   unknown_120996931604569:
     name: Антонович Дизайн Контекст
@@ -218,21 +190,18 @@ clients:
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
   unknown_4864027116949045:
     name: Казахстан Автотрейд
     act_id: act_4864027116949045
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
   unknown_1265947288969279:
     name: AMKZ_ВШОЗ
     act_id: act_1265947288969279
     lead_action_types:
     - lead
     - onsite_conversion.lead_grouped
-    - onsite_conversion.messaging_first_reply
 meta_api:
   version: v19.0
   base_url: https://graph.facebook.com
