@@ -21,7 +21,7 @@ from .base import DataSource, CampaignRow
 
 logger = logging.getLogger(__name__)
 
-INSIGHTS_FIELDS = "campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,actions,objective,reach,clicks,date_start,date_stop"
+INSIGHTS_FIELDS = "campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,actions,objective,optimization_goal,reach,clicks,date_start,date_stop"
 
 class MetaAdsSource(DataSource):
     """Реализация DataSource для Meta Marketing API с поддержкой иерархии."""
@@ -112,6 +112,7 @@ class MetaAdsSource(DataSource):
             spend = float(insight.get("spend", 0) or 0)
             actions = insight.get("actions", [])
             objective = insight.get("objective", "")
+            opt_goal = insight.get("optimization_goal", "")
             results = 0
             reach = 0
             
@@ -129,8 +130,10 @@ class MetaAdsSource(DataSource):
                 reach = int(insight.get("reach", 0))
                 results = 0
             elif objective in ("OUTCOME_ENGAGEMENT", "POST_ENGAGEMENT"):
-                if msg_actions > 0:
+                # Если оптимизация на переписки, считаем переписки
+                if opt_goal in ("REPLIES", "CONVERSATIONS"):
                     results = msg_actions
+                # Иначе это вовлеченность в пост/профиль -> охваты
                 else:
                     reach = int(insight.get("reach", 0))
                     results = 0
@@ -159,6 +162,7 @@ class MetaAdsSource(DataSource):
             camp_node["name"] = insight.get("campaign_name", "Без названия")
             camp_node["status"] = statuses.get(c_id, "UNKNOWN")
             camp_node["objective"] = objective
+            camp_node["opt_goal"] = opt_goal
             if msg_actions > 0:
                 camp_node["has_messages"] = True
             
@@ -192,10 +196,11 @@ class MetaAdsSource(DataSource):
         rows = []
         for c_id, c_data in tree.items():
             obj = c_data.get("objective", "")
+            opt = c_data.get("opt_goal", "")
             has_msg = c_data.get("has_messages", False)
             
-            is_lead = obj in ("OUTCOME_LEADS", "LEAD_GENERATION", "CONVERSIONS", "OUTCOME_SALES", "MESSAGES", "MESSAGING") or (obj in ("OUTCOME_ENGAGEMENT", "POST_ENGAGEMENT") and has_msg)
-            is_aw = obj in ("OUTCOME_AWARENESS", "REACH", "BRAND_AWARENESS") or (obj in ("OUTCOME_ENGAGEMENT", "POST_ENGAGEMENT") and not has_msg)
+            is_lead = obj in ("OUTCOME_LEADS", "LEAD_GENERATION", "CONVERSIONS", "OUTCOME_SALES", "MESSAGES", "MESSAGING") or (obj in ("OUTCOME_ENGAGEMENT", "POST_ENGAGEMENT") and opt in ("REPLIES", "CONVERSATIONS"))
+            is_aw = obj in ("OUTCOME_AWARENESS", "REACH", "BRAND_AWARENESS") or (obj in ("OUTCOME_ENGAGEMENT", "POST_ENGAGEMENT") and opt not in ("REPLIES", "CONVERSATIONS"))
             
             rows.append(CampaignRow(
                 level="campaign",
