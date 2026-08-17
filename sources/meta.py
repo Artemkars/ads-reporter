@@ -119,13 +119,14 @@ class MetaAdsSource(DataSource):
             lead_actions = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") in lead_action_types)
             msg_actions = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") == "onsite_conversion.messaging_conversation_started_7d")
             eng_actions = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") == "post_engagement")
+            link_clicks = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") == "link_click")
 
             if objective in ("OUTCOME_LEADS", "LEAD_GENERATION", "CONVERSIONS", "OUTCOME_SALES"):
                 results = lead_actions
             elif objective in ("MESSAGES", "MESSAGING"):
                 results = msg_actions
             elif objective in ("OUTCOME_TRAFFIC", "LINK_CLICKS"):
-                results = int(insight.get("clicks", 0))
+                results = link_clicks if link_clicks > 0 else int(insight.get("clicks", 0))
             elif objective in ("OUTCOME_AWARENESS", "REACH", "BRAND_AWARENESS"):
                 reach = int(insight.get("reach", 0))
                 results = 0
@@ -142,6 +143,8 @@ class MetaAdsSource(DataSource):
                     results = lead_actions
                 elif msg_actions > 0:
                     results = msg_actions
+                elif link_clicks > 0:
+                    results = link_clicks
                 else:
                     results = int(insight.get("clicks", 0))
                     
