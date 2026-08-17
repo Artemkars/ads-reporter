@@ -21,7 +21,7 @@ from .base import DataSource, CampaignRow
 
 logger = logging.getLogger(__name__)
 
-INSIGHTS_FIELDS = "campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,actions,objective,optimization_goal,reach,clicks,date_start,date_stop"
+INSIGHTS_FIELDS = "campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,actions,objective,optimization_goal,reach,impressions,clicks,date_start,date_stop"
 
 class MetaAdsSource(DataSource):
     """Реализация DataSource для Meta Marketing API с поддержкой иерархии."""
@@ -86,13 +86,13 @@ class MetaAdsSource(DataSource):
         # Построение дерева
         
         def new_ad_node():
-            return {"name": "", "spend": 0.0, "results": 0, "reach": 0, "status": "UNKNOWN"}
+            return {"name": "", "spend": 0.0, "results": 0, "reach": 0, "impressions": 0, "status": "UNKNOWN"}
             
         def new_adset_node():
-            return {"name": "", "spend": 0.0, "results": 0, "reach": 0, "status": "UNKNOWN", "ads": defaultdict(new_ad_node)}
+            return {"name": "", "spend": 0.0, "results": 0, "reach": 0, "impressions": 0, "status": "UNKNOWN", "ads": defaultdict(new_ad_node)}
             
         def new_camp_node():
-            return {"name": "", "spend": 0.0, "results": 0, "reach": 0, "status": "UNKNOWN", "adsets": defaultdict(new_adset_node)}
+            return {"name": "", "spend": 0.0, "results": 0, "reach": 0, "impressions": 0, "status": "UNKNOWN", "adsets": defaultdict(new_adset_node)}
 
         tree = defaultdict(new_camp_node)
         
@@ -115,6 +115,7 @@ class MetaAdsSource(DataSource):
             opt_goal = insight.get("optimization_goal", "")
             results = 0
             reach = 0
+            impressions = int(insight.get("impressions", 0))
             
             lead_actions = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") in lead_action_types)
             msg_actions = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") == "onsite_conversion.messaging_conversation_started_7d")
@@ -176,6 +177,7 @@ class MetaAdsSource(DataSource):
             adset_node["spend"] += spend
             adset_node["results"] += results
             adset_node["reach"] += reach
+            adset_node["impressions"] += impressions
             
             # Обновляем Объявление
             ad_node = adset_node["ads"][ad_id]
@@ -184,12 +186,14 @@ class MetaAdsSource(DataSource):
             ad_node["spend"] += spend
             ad_node["results"] += results
             ad_node["reach"] += reach
+            ad_node["impressions"] += impressions
         
         # Пересчет итогов для кампаний
         for c_id, c_data in tree.items():
             c_data["spend"] = sum(a["spend"] for a in c_data["adsets"].values())
             c_data["results"] = sum(a["results"] for a in c_data["adsets"].values())
             c_data["reach"] = sum(a["reach"] for a in c_data["adsets"].values())
+            c_data["impressions"] = sum(a["impressions"] for a in c_data["adsets"].values())
             
         if min_date > max_date:
             min_date = date_from or (date.today() - timedelta(days=7))
@@ -216,6 +220,7 @@ class MetaAdsSource(DataSource):
                 client_id=client_id,
                 is_lead_campaign=is_lead,
                 reach=c_data["reach"],
+                impressions=c_data["impressions"],
                 is_awareness_campaign=is_aw
             ))
             
@@ -231,6 +236,7 @@ class MetaAdsSource(DataSource):
                     client_id=client_id,
                     is_lead_campaign=is_lead,
                     reach=a_data["reach"],
+                    impressions=a_data["impressions"],
                     is_awareness_campaign=is_aw
                 ))
                 
@@ -246,6 +252,7 @@ class MetaAdsSource(DataSource):
                         client_id=client_id,
                         is_lead_campaign=is_lead,
                         reach=ad_data["reach"],
+                        impressions=ad_data["impressions"],
                         is_awareness_campaign=is_aw
                     ))
 

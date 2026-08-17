@@ -296,10 +296,12 @@ def write_grand_summary_block(
     total_spend_usd = 0.0
     total_leads = 0
     total_reach = 0
+    total_lead_spend_kzt = 0.0
     
     for report in reports:
         total_spend_usd += report.total.spend_usd
         total_spend_kzt += report.total.spend_kzt
+        multiplier = report.rate_usd_kzt * (1 + report.vat_pct / 100)
         
         # Считаем лиды ТОЛЬКО из кампаний, нацеленных на лиды (на уровне кампании)
         if report.original_campaigns:
@@ -307,10 +309,12 @@ def write_grand_summary_block(
                 if camp.level == 'campaign':
                     if camp.is_lead_campaign:
                         total_leads += camp.results
+                    if not camp.is_awareness_campaign:
+                        total_lead_spend_kzt += (camp.spend_usd * multiplier)
                     if camp.is_awareness_campaign:
                         total_reach += camp.reach
                     
-    avg_cost = round(total_spend_kzt / total_leads, 2) if total_leads > 0 else 0.0
+    avg_cost = round(total_lead_spend_kzt / total_leads, 2) if total_leads > 0 else 0.0
     
     rows = [
         ["ОБЩАЯ СВОДКА (Meta + Google + TikTok)"],

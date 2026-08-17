@@ -29,6 +29,7 @@ class ReportRow:
     is_total: bool = False   # True для итоговой строки блока
     is_lead_campaign: bool = False
     reach: int = 0
+    impressions: int = 0
     is_awareness_campaign: bool = False
 
 
@@ -76,7 +77,10 @@ def calculate_report(
     rows: list[ReportRow] = []
     for camp in campaigns:
         spend_kzt = round(camp.spend_usd * multiplier, 2)
-        cost_per_result = round(spend_kzt / camp.results, 2) if camp.results > 0 else 0.0
+        if camp.is_awareness_campaign and camp.impressions > 0:
+            cost_per_result = round((spend_kzt / camp.impressions) * 1000, 2)
+        else:
+            cost_per_result = round(spend_kzt / camp.results, 2) if camp.results > 0 else 0.0
 
         rows.append(ReportRow(
             name=camp.name,
@@ -88,6 +92,7 @@ def calculate_report(
             level=camp.level,
             is_lead_campaign=camp.is_lead_campaign,
             reach=camp.reach,
+            impressions=camp.impressions,
             is_awareness_campaign=camp.is_awareness_campaign
         ))
 
@@ -97,8 +102,11 @@ def calculate_report(
     total_spend_kzt = round(sum(r.spend_kzt for r in campaign_rows), 2)
     total_results = sum(r.results for r in campaign_rows)
     total_reach = sum(r.reach for r in campaign_rows if r.is_awareness_campaign)
+    
+    # Считаем среднюю цену лида только по кампаниям, которые дали лиды (исключаем траты на охват)
+    total_lead_spend_kzt = sum(r.spend_kzt for r in campaign_rows if not r.is_awareness_campaign)
     avg_cost_per_result = (
-        round(total_spend_kzt / total_results, 2) if total_results > 0 else 0.0
+        round(total_lead_spend_kzt / total_results, 2) if total_results > 0 else 0.0
     )
 
     total = ReportRow(
@@ -108,9 +116,9 @@ def calculate_report(
         spend_kzt=total_spend_kzt,
         results=total_results,
         cost_per_result=avg_cost_per_result,
-        level="total",
         is_total=True,
-        reach=total_reach
+        reach=total_reach,
+        impressions=sum(r.impressions for r in campaign_rows)
     )
 
     # Формируем метку периода
