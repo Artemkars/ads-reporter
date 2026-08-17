@@ -115,26 +115,31 @@ class MetaAdsSource(DataSource):
             results = 0
             reach = 0
             
+            lead_actions = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") in lead_action_types)
+            msg_actions = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") in ("onsite_conversion.messaging_first_reply", "onsite_conversion.messaging_conversation_started_7d"))
+            eng_actions = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") == "post_engagement")
+
             if objective in ("OUTCOME_LEADS", "LEAD_GENERATION", "CONVERSIONS", "OUTCOME_SALES"):
-                for act in actions:
-                    if act.get("action_type") in lead_action_types:
-                        results += int(act.get("value", 0))
+                results = lead_actions
+            elif objective in ("MESSAGES", "MESSAGING"):
+                results = msg_actions
             elif objective in ("OUTCOME_TRAFFIC", "LINK_CLICKS"):
                 results = int(insight.get("clicks", 0))
             elif objective in ("OUTCOME_AWARENESS", "REACH", "BRAND_AWARENESS"):
                 reach = int(insight.get("reach", 0))
                 results = 0
             elif objective in ("OUTCOME_ENGAGEMENT", "POST_ENGAGEMENT"):
-                eng = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") == "post_engagement")
-                results = eng if eng > 0 else int(insight.get("clicks", 0))
-            elif objective in ("MESSAGES", "MESSAGING"):
-                for act in actions:
-                    if act.get("action_type") in ("onsite_conversion.messaging_first_reply", "onsite_conversion.messaging_conversation_started_7d"):
-                        results += int(act.get("value", 0))
+                if msg_actions > 0:
+                    results = msg_actions
+                else:
+                    results = eng_actions if eng_actions > 0 else int(insight.get("clicks", 0))
             else:
-                for act in actions:
-                    if act.get("action_type") in lead_action_types:
-                        results += int(act.get("value", 0) or 0)
+                if lead_actions > 0:
+                    results = lead_actions
+                elif msg_actions > 0:
+                    results = msg_actions
+                else:
+                    results = int(insight.get("clicks", 0))
                     
             # Если нет ни расходов, ни результатов, ни охватов - пропускаем
             if spend == 0 and results == 0 and reach == 0:
