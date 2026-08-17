@@ -127,6 +127,10 @@ class MetaAdsSource(DataSource):
             elif objective in ("OUTCOME_ENGAGEMENT", "POST_ENGAGEMENT"):
                 eng = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") == "post_engagement")
                 results = eng if eng > 0 else int(insight.get("clicks", 0))
+            elif objective in ("MESSAGES", "MESSAGING"):
+                for act in actions:
+                    if act.get("action_type") in ("onsite_conversion.messaging_first_reply", "onsite_conversion.messaging_conversation_started_7d"):
+                        results += int(act.get("value", 0))
             else:
                 for act in actions:
                     if act.get("action_type") in lead_action_types:
