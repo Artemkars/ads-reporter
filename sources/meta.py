@@ -117,7 +117,7 @@ class MetaAdsSource(DataSource):
             reach = 0
             
             lead_actions = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") in lead_action_types)
-            msg_actions = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") in ("onsite_conversion.messaging_first_reply", "onsite_conversion.messaging_conversation_started_7d"))
+            msg_actions = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") == "onsite_conversion.messaging_conversation_started_7d")
             eng_actions = sum(int(act.get("value", 0)) for act in actions if act.get("action_type") == "post_engagement")
 
             if objective in ("OUTCOME_LEADS", "LEAD_GENERATION", "CONVERSIONS", "OUTCOME_SALES"):
