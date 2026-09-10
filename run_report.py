@@ -128,6 +128,10 @@ def parse_args() -> argparse.Namespace:
         help="Директория для сохранения Excel-файлов (по умолчанию: output/)"
     )
     parser.add_argument(
+        "--level", choices=["campaign", "adset", "ad"], default="ad",
+        help="Уровень детализации: campaign (только кампании), adset (кампании + группы), ad (полная детализация по объявлениям). По умолчанию: ad."
+    )
+    parser.add_argument(
         "--list-clients", action="store_true",
         help="Показать список клиентов из config.yaml и выйти"
     )
@@ -333,6 +337,7 @@ def main() -> None:
                 date_from=d_from_label,
                 date_to=d_to_label,
                 source_name="Meta Ads",
+                level=args.level,
             )
             reports_to_write = [meta_report]
             
@@ -357,6 +362,7 @@ def main() -> None:
                         date_from=d_from_label,
                         date_to=d_to_label,
                         source_name="Google Ads",
+                        level=args.level,
                     )
                     reports_to_write.append(google_report)
                 else:
@@ -383,6 +389,7 @@ def main() -> None:
                         date_from=d_from_label,
                         date_to=d_to_label,
                         source_name="TikTok Ads",
+                        level=args.level,
                     )
                     reports_to_write.append(tiktok_report)
                 else:

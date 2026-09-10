@@ -24,6 +24,10 @@ on:
         description: 'Кабинет (ключ из config.yaml, например: amk)'
         required: false
         default: ''
+      level:
+        description: 'Уровень детализации: campaign, adset, ad (по умолчанию: ad)'
+        required: false
+        default: 'ad'
 
 jobs:
   generate-report:
@@ -57,6 +61,9 @@ jobs:
           fi
           if [ -n "${{ github.event.inputs.client }}" ]; then
             ARGS="$ARGS --client ${{ github.event.inputs.client }}"
+          fi
+          if [ -n "${{ github.event.inputs.level }}" ]; then
+            ARGS="$ARGS --level ${{ github.event.inputs.level }}"
           fi
 
           echo "cli_args=$ARGS" >> $GITHUB_OUTPUT

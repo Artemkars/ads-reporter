@@ -56,6 +56,7 @@ def calculate_report(
     date_from: str = None,
     date_to: str = None,
     source_name: str = "Meta Ads",
+    level: str = "ad",
 ) -> ClientReport:
     """
     Рассчитывает финансовые показатели по всем кампаниям клиента.
@@ -66,8 +67,9 @@ def calculate_report(
         campaigns: список CampaignRow из DataSource
         rate_usd_kzt: курс USD/₸ на неделю (задаётся пользователем)
         vat_pct: процент НДС + АК (например, 12.0)
-
         date_from, date_to: Строки дат для заголовка.
+        source_name: Источник ("Meta Ads", "Google Ads", "TikTok Ads")
+        level: Уровень детализации ('campaign', 'adset', 'ad')
 
     Returns:
         ClientReport с данными (или пустым списком строк, если нет кампаний).
@@ -124,10 +126,18 @@ def calculate_report(
     # Формируем метку периода
     date_label = f"{date_from} – {date_to}" if date_from and date_to else "Последние 7 дней"
 
+    # Фильтрация строк по запрошенному уровню детализации
+    if level == "campaign":
+        filtered_rows = [r for r in rows if r.level == "campaign"]
+    elif level == "adset":
+        filtered_rows = [r for r in rows if r.level in ("campaign", "adset")]
+    else:  # 'ad' or full
+        filtered_rows = rows
+
     return ClientReport(
         client_id=client_id,
         client_name=client_name,
-        rows=rows,
+        rows=filtered_rows,
         total=total,
         rate_usd_kzt=rate_usd_kzt,
         vat_pct=vat_pct,
